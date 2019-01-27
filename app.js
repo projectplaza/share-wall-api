@@ -22,6 +22,8 @@ app.use('/', require('./routes/index'));
 app.use('/api/v1/tests', require('./routes/test'));
 // ログインAPI
 app.use('/api/v1/login', require('./routes/login'));
+// チームAPI
+app.use('/api/v1/teams', require('./routes/team'));
 
 
 // catch 404 and forward to error handler
