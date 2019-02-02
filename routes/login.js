@@ -20,6 +20,7 @@ var users = [
  */
 /* POST. */
 router.post('/v1/login', function(req, res, next) {
+  console.log('v1/login execution');
   // チェック処理
   let params = req.body;
   if (params.userId == undefined || params.userId == "") {
@@ -66,13 +67,24 @@ router.use( function( req, res, next ){
   });
 });
 
-// 認証テスト
+/**
+ * トークン確認API
+ */
+/* POST. */
+router.post('/v1/login/check', function(req, res, next) {
+  console.log('v1/login/check execution');
+  // トークンチェックは共通処理にて実施済み
+  res.json( { success: true, message: 'Authentication successfully.' } );
+  return;
+});
+
+// 認証テスト（※削除予定）
 //. GET(http://localhost:8080/token/)
 router.get( '/', function( req, res ){
   res.json( { message: 'Welcome to API routing.' } );
 });
 
-// 認証テスト
+// 認証テスト（※削除予定）
 //. POST(http://localhost:8080/token/users)
 router.post( '/users', function( req, res ){
   res.json( users );

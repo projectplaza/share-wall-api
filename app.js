@@ -6,19 +6,13 @@ var logger = require('morgan');
 
 var app = express();
 var bodyParser = require('body-parser');
-
-// ポート番号
-// var port = process.env.PORT || 8080
 app.use( bodyParser.urlencoded( { extended: false } ) );
 app.use( bodyParser.json() );
 
 // tokenと認証
 app.use( '/api', require('./routes/login'));
-// 以降のAPIはtokenが必要
-
 
 // app.listen( port );
-// console.log( 'server started http://localhost:' + port + '/' );
 console.log( 'server started http://localhost:3000/' );
 
 // view engine setup
