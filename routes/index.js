@@ -9,8 +9,8 @@ module.exports = (app) => {
   app.use('/api', login);
   // テスト
   app.use('/api/v1/tests', test);
-  // ユーザ
-  app.use('/api/v1/user', user);
+  // ユーザプロフィール
+  app.use('/api/v1/prof', user);
   // チーム
   app.use('/api/v1/team', team);
   // etc..

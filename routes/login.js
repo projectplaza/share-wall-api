@@ -41,7 +41,7 @@ router.post('/v1/login', async function(req, res, next) {
     if( rows[i].user_id == params.userId && rows[i].pass_word == params.password ){
       // トークン生成
       var token= jwt.sign( rows[i], app.get('superSecret'), {
-        expiresIn: '24h'
+        expiresIn: '720h'
       });
       res.json( { success: true, message: 'Authentication successfully finished.', token: token } );
       return;
