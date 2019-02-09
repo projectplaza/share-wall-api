@@ -44,8 +44,7 @@ router.post('/v1/login', async function(req, res, next) {
   // ユーザ検索
   const { rows } = await db.query('SELECT * FROM sw_m_user WHERE user_id = $1', [userId]);
   if (!rows || rows.length == 0) {
-    res.json( { success: false, message: 'No Data.' } );
-    return;
+    return res.status(500).send( { success: false, message: 'No User Data.' } );
   }
   // 判定とトークン生成
   for( var i = 0; i < rows.length; i ++ ) {
@@ -67,8 +66,7 @@ router.post('/v1/login', async function(req, res, next) {
       return;
     }
   }
-  res.json( { success: false, message: 'Authentication failed.' } );
-  return;
+  return res.status(500).send( { success: false, message: 'Authentication failed.' } );
 });
 /**
  * API確認用API.<br/>
@@ -108,10 +106,18 @@ router.use( function( req, res, next ){
  * トークン確認API.<br/>
  * POST(http://localhost:3000/api/v1/login/check)
  */
-router.post('/v1/login/check', function(req, res, next) {
+router.post('/v1/login/check', async function(req, res, next) {
   console.log('v1/login/check execution');
-  // トークンチェックは共通処理にて実施済み
-  res.json( { success: true, message: 'Authentication successfully.' } );
+  // トークン情報を検索
+  //. ポスト本体、URLパラメータ、HTTPヘッダいずれかからトークンを取得
+  var token = req.body.token || req.query.token || req.headers['x-access-token'];
+  // ※認証を通過しているのでトークンの有無はチェックしない
+  // トークンからユーザIDを取得
+  let tokens = await db.query('SELECT * FROM sw_token WHERE token = $1', [token]);
+  if (!tokens.rows || tokens.rows.length == 0) {
+    res.json( { success: false, message: 'No token.' } );
+  }
+  res.json( { success: true, message: 'True token.' } );
   return;
 });
 
