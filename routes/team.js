@@ -1,10 +1,21 @@
+/**
+ * チームAPI.<br/>
+ * 
+ * GET(http://localhost:3000/api/v1/team)
+ * GET(http://localhost:3000/api/v1/team/{チームID})
+ * POST(http://localhost:3000/api/v1/team/{チームID})
+ * PUT(http://localhost:3000/api/v1/team/{チームID})
+ * DELETE(http://localhost:3000/api/v1/team/{チームID})
+ * GET(http://localhost:3000/api/v1/team/{チームID}/users)
+ * POST(http://localhost:3000/api/v1/team/{チームID}/users)
+ */
 var express = require('express');
 var router = express.Router();
 
 /**
- * チームAPI
+ * チームAPI.<br/>
+ * GET(http://localhost:3000/api/v1/team)
  */
-/* GET リストデータを返却する. */
 router.get('/', function(req, res, next) {
   // パラメータ取得
   let params = req.body;
@@ -24,7 +35,10 @@ router.get('/', function(req, res, next) {
             {teamId : teamId, teamName : teamName}]);
 });
 
-/* GET データを返却する. */
+/**
+ * チーム情報取得API.<br/>
+ * GET(http://localhost:3000/api/v1/team/{チームID})
+ */
 router.get('/:teamId', function(req, res, next) {
   // チェック処理
   // teamId がない場合はリスト取得が動作するためチェックなし
@@ -41,7 +55,10 @@ router.get('/:teamId', function(req, res, next) {
   });
 });
 
-/* POST データを登録する. */
+/**
+ * チーム登録API.<br/>
+ * POST(http://localhost:3000/api/v1/team/{チームID})
+ */
 router.post('/:teamId', function(req, res, next) {
   // チェック処理
   let teamId = req.params.teamId;
@@ -63,7 +80,46 @@ router.post('/:teamId', function(req, res, next) {
   });
 });
 
-/* POST 権限データを登録する. */
+/**
+ * チーム更新API.<br/>
+ * PUT(http://localhost:3000/api/v1/team/{チームID})
+ */
+router.put('/:teamId', function(req, res, next) {
+  console.log(req)
+  res.send({test : "PUT データ更新",
+            id : req.params.teamId});
+});
+
+/**
+ * チーム情報を一部更新API（※いらない？とりあえず未実装のまま放置。）.<br/>
+ * PATCH(http://localhost:3000/api/v1/team/{チームID})
+ */
+router.patch('/:id', function(req, res, next) {
+  console.log(req)
+  res.send({test : "PATCH 一部データ更新",
+            id : req.params.id});
+});
+
+/**
+ * チーム削除API.<br/>
+ * 論理削除。<br/>
+ * DELETE(http://localhost:3000/api/v1/team/{チームID})
+ */
+router.delete('/:teamId', function(req, res, next) {
+  console.log(req)
+  res.send({test : "DELETE データ削除",
+            id : req.params.teamId});
+});
+
+/**
+ * チーム メンバー＆権限取得API.<br/>
+ * GET(http://localhost:3000/api/v1/team/{チームID}/users)
+ */
+
+/**
+ * チーム メンバー＆権限登録API.<br/>
+ * POST(http://localhost:3000/api/v1/team/{チームID}/users)
+ */
 router.post('/:teamId/users', function(req, res, next) {
   // チェック処理
   let teamId = req.params.teamId;
@@ -102,27 +158,6 @@ router.post('/:teamId/users', function(req, res, next) {
   // TODO: 登録処理。DELETE & INSERT
 
   res.send(result);
-});
-
-/* PUT データを更新する. */
-router.put('/:id', function(req, res, next) {
-  console.log(req)
-  res.send({test : "PUT データ更新",
-            id : req.params.id});
-});
-
-/* PATCH データを一部更新する. */
-router.patch('/:id', function(req, res, next) {
-  console.log(req)
-  res.send({test : "PATCH 一部データ更新",
-            id : req.params.id});
-});
-
-/* DELETE データを更新する. */
-router.delete('/:id', function(req, res, next) {
-  console.log(req)
-  res.send({test : "DELETE データ削除",
-            id : req.params.id});
 });
 
 module.exports = router;
