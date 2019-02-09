@@ -1,9 +1,14 @@
-var express = require('express');
-var router = express.Router();
+// ./routes/index.js
+const login = require('./login');
+const test = require('./test');
+const team = require('./team');
 
-/* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
-});
-
-module.exports = router;
+module.exports = (app) => {
+  // ログイン
+  app.use('/api', login);
+  // テスト
+  app.use('/api/v1/tests', test);
+  // チーム
+  app.use('/api/v1/team', team);
+  // etc..
+}

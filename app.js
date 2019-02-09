@@ -4,27 +4,29 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+var cors = require('cors');
+
 var app = express();
+
+// app.listen( port );
+console.log( 'server started http://localhost:3000/' );
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+app.use(cors());
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// URL指定
-app.use('/', require('./routes/index'));
-// テストAPI
-app.use('/api/v1/tests', require('./routes/test'));
-// ログインAPI
-app.use('/api/v1/login', require('./routes/login'));
-// チームAPI
-app.use('/api/v1/teams', require('./routes/team'));
+// routes
+const mountRoutes = require('./routes')
 
+// const app = express()
+mountRoutes(app)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
