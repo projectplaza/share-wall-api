@@ -50,6 +50,11 @@ router.post('/v1/login', async function(req, res, next) {
   res.json( { success: false, message: 'Authentication failed.' } );
   return;
 });
+router.options('/v1/login', async function(req, res, next) {
+  res.json( { success: true } );
+  return;
+});
+  
 
 //. 認証フィルタ
 router.use( function( req, res, next ){
