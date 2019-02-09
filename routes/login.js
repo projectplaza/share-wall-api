@@ -1,3 +1,13 @@
+/**
+ * ログインAPI.<br/>
+ * 
+ * POST(http://localhost:3000/api/v1/login)
+ * OPTIONS(http://localhost:3000/api/v1/login)
+ * POST(http://localhost:3000/api/v1/login/check)
+ * 以下、削除予定
+ * GET(http://localhost:3000/token/)
+ * POST(http://localhost:3000/token/users)
+ */
 var express = require('express');
 var app = express();
 
@@ -17,46 +27,60 @@ var config = require('../config');
 app.set('superSecret', config.secret);
 
 /**
- * ログインAPI
+ * ログインAPI.<br/>
+ * POST(http://localhost:3000/api/v1/login)
  */
-/* POST. */
 router.post('/v1/login', async function(req, res, next) {
   console.log('v1/login execution');
   // チェック処理
   let params = req.body;
-  if (params.userId == undefined || params.userId == "") {
+  let userId = params.userId;
+  if (userId == undefined || userId == "") {
     res.status(500).send({message : "ユーザIDが入力されていません。"});
   }
   if (params.password == undefined || params.password == "") {
     res.status(500).send({message : "パスワードが入力されていません。"});
   }
   // ユーザ検索
-  const { rows } = await db.query('SELECT * FROM sw_m_user WHERE user_id = $1', [params.userId]);
+  const { rows } = await db.query('SELECT * FROM sw_m_user WHERE user_id = $1', [userId]);
   if (!rows || rows.length == 0) {
-    res.json( { success: false, message: 'No Data.' } );
-    return;
+    return res.status(500).send( { success: false, message: 'No User Data.' } );
   }
   // 判定とトークン生成
   for( var i = 0; i < rows.length; i ++ ) {
-    if( rows[i].user_id == params.userId && rows[i].pass_word == params.password ){
+    if( rows[i].user_id == userId && rows[i].pass_word == params.password ){
       // トークン生成
       var token= jwt.sign( rows[i], app.get('superSecret'), {
-        expiresIn: '24h'
+        expiresIn: '720h'
       });
+
+      // トークンをDBへ登録
+      let nowTokens = await db.query('SELECT * FROM sw_token WHERE user_id = $1', [userId]);
+      if (nowTokens.rows && nowTokens.rows.length > 0) {
+      // トークン情報があれば削除
+      let delTokens = await db.query('DELETE FROM sw_token WHERE user_id = $1', [userId]);
+      }
+      let newTokens = await db.query('INSERT INTO sw_token (token, user_id) VALUES ($1, $2)', [token, userId]);
+
       res.json( { success: true, message: 'Authentication successfully finished.', token: token } );
       return;
     }
   }
-  res.json( { success: false, message: 'Authentication failed.' } );
-  return;
+  return res.status(500).send( { success: false, message: 'Authentication failed.' } );
 });
+/**
+ * API確認用API.<br/>
+ * OPTIONS(http://localhost:3000/api/v1/login)
+ */
 router.options('/v1/login', async function(req, res, next) {
   res.json( { success: true } );
   return;
 });
   
-
-//. 認証フィルタ
+/**
+ * 認証フィルタ.<br/>
+ * 以降のAPIから認証が入ります。
+ */
 router.use( function( req, res, next ){
   //. ポスト本体、URLパラメータ、HTTPヘッダいずれかにトークンがセットされているか調べる
   var token = req.body.token || req.query.token || req.headers['x-access-token'];
@@ -79,24 +103,32 @@ router.use( function( req, res, next ){
 });
 
 /**
- * トークン確認API
+ * トークン確認API.<br/>
+ * POST(http://localhost:3000/api/v1/login/check)
  */
-/* POST. */
-router.post('/v1/login/check', function(req, res, next) {
+router.post('/v1/login/check', async function(req, res, next) {
   console.log('v1/login/check execution');
-  // トークンチェックは共通処理にて実施済み
-  res.json( { success: true, message: 'Authentication successfully.' } );
+  // トークン情報を検索
+  //. ポスト本体、URLパラメータ、HTTPヘッダいずれかからトークンを取得
+  var token = req.body.token || req.query.token || req.headers['x-access-token'];
+  // ※認証を通過しているのでトークンの有無はチェックしない
+  // トークンからユーザIDを取得
+  let tokens = await db.query('SELECT * FROM sw_token WHERE token = $1', [token]);
+  if (!tokens.rows || tokens.rows.length == 0) {
+    res.json( { success: false, message: 'No token.' } );
+  }
+  res.json( { success: true, message: 'True token.' } );
   return;
 });
 
 // 認証テスト（※削除予定）
-//. GET(http://localhost:8080/token/)
+//. GET(http://localhost:3000/token/)
 router.get( '/', function( req, res ) {
   res.json( { message: 'Welcome to API routing.' } );
 });
 
 // 認証テスト（※削除予定）
-//. POST(http://localhost:8080/token/users)
+//. POST(http://localhost:3000/token/users)
 router.post( '/users', async function( req, res ) {
   // ユーザ検索
   const { rows } = await db.query('SELECT * FROM sw_m_user');
