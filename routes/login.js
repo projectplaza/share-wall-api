@@ -17,9 +17,10 @@ var config = require('../config');
 app.set('superSecret', config.secret);
 
 /**
- * ログインAPI
+ * ログインAPI.<br/>
+ * POST<br/>
+ * http://localhost:3000/api/v1/login
  */
-/* POST. */
 router.post('/v1/login', async function(req, res, next) {
   console.log('v1/login execution');
   // チェック処理
@@ -50,13 +51,20 @@ router.post('/v1/login', async function(req, res, next) {
   res.json( { success: false, message: 'Authentication failed.' } );
   return;
 });
+/**
+ * API確認用API.<br/>
+ * OPTIONS<br/>
+ * http://localhost:3000/api/v1/login
+ */
 router.options('/v1/login', async function(req, res, next) {
   res.json( { success: true } );
   return;
 });
   
-
-//. 認証フィルタ
+/**
+ * 認証フィルタ.<br/>
+ * 以降のAPIから認証が入ります。
+ */
 router.use( function( req, res, next ){
   //. ポスト本体、URLパラメータ、HTTPヘッダいずれかにトークンがセットされているか調べる
   var token = req.body.token || req.query.token || req.headers['x-access-token'];
@@ -79,9 +87,10 @@ router.use( function( req, res, next ){
 });
 
 /**
- * トークン確認API
+ * トークン確認API.<br/>
+ * POST<br/>
+ * http://localhost:3000/api/v1/login/check
  */
-/* POST. */
 router.post('/v1/login/check', function(req, res, next) {
   console.log('v1/login/check execution');
   // トークンチェックは共通処理にて実施済み
