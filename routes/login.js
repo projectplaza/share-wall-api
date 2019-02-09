@@ -1,25 +1,26 @@
 var express = require('express');
 var app = express();
 
-var router = express.Router();
-var jwt = require( 'jsonwebtoken' );
+// ルーター
+const Router = require('express-promise-router');
+const router = new Router();
+module.exports = router;
 
+// DBアクセス
+const db = require('../db');
+
+// 認証
+var jwt = require( 'jsonwebtoken' );
 var config = require('../config');
+
 // application variables
 app.set('superSecret', config.secret);
-//. ユーザー情報（本来は DB などに格納された情報を使う）
-var users = [
-  { userId: 'user0', password: 'pass0', admin: true },
-  { userId: 'user1', password: 'pass1', admin: false },
-  { userId: 'user2', password: 'pass2', admin: false },
-  { userId: 'user3', password: 'pass3', admin: false }
-];
 
 /**
  * ログインAPI
  */
 /* POST. */
-router.post('/v1/login', function(req, res, next) {
+router.post('/v1/login', async function(req, res, next) {
   console.log('v1/login execution');
   // チェック処理
   let params = req.body;
@@ -29,12 +30,17 @@ router.post('/v1/login', function(req, res, next) {
   if (params.password == undefined || params.password == "") {
     res.status(500).send({message : "パスワードが入力されていません。"});
   }
-
-  // ログイン
-  for( var i = 0; i < users.length; i ++ ){
-    if( users[i].userId == params.userId && users[i].password == params.password ){
+  // ユーザ検索
+  const { rows } = await db.query('SELECT * FROM sw_m_user WHERE user_id = $1', [params.userId]);
+  if (!rows || rows.length == 0) {
+    res.json( { success: false, message: 'No Data.' } );
+    return;
+  }
+  // 判定とトークン生成
+  for( var i = 0; i < rows.length; i ++ ) {
+    if( rows[i].user_id == params.userId && rows[i].pass_word == params.password ){
       // トークン生成
-      var token= jwt.sign( users[i], app.get('superSecret'), {
+      var token= jwt.sign( rows[i], app.get('superSecret'), {
         expiresIn: '24h'
       });
       res.json( { success: true, message: 'Authentication successfully finished.', token: token } );
@@ -80,14 +86,16 @@ router.post('/v1/login/check', function(req, res, next) {
 
 // 認証テスト（※削除予定）
 //. GET(http://localhost:8080/token/)
-router.get( '/', function( req, res ){
+router.get( '/', function( req, res ) {
   res.json( { message: 'Welcome to API routing.' } );
 });
 
 // 認証テスト（※削除予定）
 //. POST(http://localhost:8080/token/users)
-router.post( '/users', function( req, res ){
-  res.json( users );
+router.post( '/users', async function( req, res ) {
+  // ユーザ検索
+  const { rows } = await db.query('SELECT * FROM sw_m_user');
+  res.send(rows);
 });
 
 module.exports = router;

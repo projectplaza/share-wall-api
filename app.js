@@ -5,12 +5,6 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var app = express();
-var bodyParser = require('body-parser');
-app.use( bodyParser.urlencoded( { extended: false } ) );
-app.use( bodyParser.json() );
-
-// tokenと認証
-app.use( '/api', require('./routes/login'));
 
 // app.listen( port );
 console.log( 'server started http://localhost:3000/' );
@@ -25,10 +19,11 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// URL指定
-app.use('/', require('./routes/index'));
-// テストAPI
-app.use('/api/v1/tests', require('./routes/test'));
+// routes
+const mountRoutes = require('./routes')
+
+// const app = express()
+mountRoutes(app)
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
