@@ -59,7 +59,7 @@ router.get('/friend', async function(req, res, next) {
     let userId = tokens.rows[0].user_id;
     
     // フレンド検索
-    // TODO フレンド検索
+    // TODO: フレンド検索
     // まだフレンド機能がないため、ユーザ一覧を取得＆返却
     const { rows } = await db.query('SELECT * FROM sw_m_user');
     if (!rows || rows.length == 0) {
