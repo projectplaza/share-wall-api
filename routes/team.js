@@ -248,8 +248,8 @@ router.post('/:teamId/users', async function(req, res, next) {
     validateUtil.validate400(res, userId, "ユーザID", "userId");
 
     // メンバーの存在チェック
-   if (userUtil.isUserId(res, userId)) {
-    return res.status(500).send({message : "存在しないユーザIDです。"});
+   if (! userUtil.isUserId(res, userId)) {
+    return res.status(500).send({message : "存在しないユーザIDです。(userId:" + userId + ")"});
    }
 
     // メンバー権限
