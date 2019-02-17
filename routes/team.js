@@ -1,13 +1,13 @@
 /**
  * チームAPI.<br/>
  * 
+ * GET(http://localhost:3000/api/v1/team/list)
  * GET(http://localhost:3000/api/v1/team)
- * GET(http://localhost:3000/api/v1/team/{チームID})
- * POST(http://localhost:3000/api/v1/team/{チームID})
- * PUT(http://localhost:3000/api/v1/team/{チームID})
- * DELETE(http://localhost:3000/api/v1/team/{チームID})
- * GET(http://localhost:3000/api/v1/team/{チームID}/users)
- * POST(http://localhost:3000/api/v1/team/{チームID}/users)
+ * POST(http://localhost:3000/api/v1/team)
+ * PUT(http://localhost:3000/api/v1/team)
+ * DELETE(http://localhost:3000/api/v1/team)
+ * GET(http://localhost:3000/api/v1/team/users)
+ * POST(http://localhost:3000/api/v1/team/users)
  */
 var express = require('express');
 var router = express.Router();
@@ -24,9 +24,9 @@ const validateUtil = require('../app/util/validateUtil.js');
 
 /**
  * チームAPI.<br/>
- * GET(http://localhost:3000/api/v1/team)
+ * GET(http://localhost:3000/api/v1/team/list)
  */
-router.get('/', async function(req, res, next) {
+router.get('/list', async function(req, res, next) {
   console.log('GET:v1/team/ execution');
 
   // tokenからuserIdを取得
@@ -65,15 +65,17 @@ router.get('/', async function(req, res, next) {
 
 /**
  * チーム情報取得API.<br/>
- * GET(http://localhost:3000/api/v1/team/{チームID})
+ * GET(http://localhost:3000/api/v1/team)
  */
-router.get('/:teamId', async function(req, res, next) {
+router.get('/', async function(req, res, next) {
+
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
 
   // パラメータ取得
+  let params = req.query;
   // チームID
-  let teamId = req.params.teamId;
+  let teamId = params.teamId;
   validateUtil.validate400(res, teamId, "チームID", "teamId");
 
   // TODO: ユーザが見える範囲のチームのみ返却
@@ -109,20 +111,20 @@ router.get('/:teamId', async function(req, res, next) {
 
 /**
  * チーム登録API.<br/>
- * POST(http://localhost:3000/api/v1/team/{チームID})
+ * POST(http://localhost:3000/api/v1/team)
  */
-router.post('/:teamId', async function(req, res, next) {
-  console.log('POST:v1/team/{チームID} execution');
+router.post('/', async function(req, res, next) {
+  console.log('POST:v1/team execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
 
   // パラメータから登録情報を取得
+  let params = req.body;
   // チームID
-  let teamId = req.params.teamId;
+  let teamId = params.teamId;
   validateUtil.validate400(res, teamId, "チームID", "teamId");
   // チーム名
-  let params = req.body;
   let teamName = params.teamName;
   validateUtil.validate400(res, teamName, "チーム名", "teamName");
   // コンテンツ
@@ -160,36 +162,36 @@ router.post('/:teamId', async function(req, res, next) {
 
 /**
  * チーム更新API.<br/>
- * PUT(http://localhost:3000/api/v1/team/{チームID})
+ * PUT(http://localhost:3000/api/v1/team)
  */
-router.put('/:teamId', function(req, res, next) {
+router.put('/', function(req, res, next) {
   console.log(req)
   // TODO: 更新処理
-  res.send({test : "PUT データ更新",
-            id : req.params.teamId});
+  res.send({test : "PUT データ更新(未実装)",
+            id : req.body.teamId});
 });
 
 /**
  * チーム情報を一部更新API（※いらない？とりあえず未実装のまま放置。）.<br/>
- * PATCH(http://localhost:3000/api/v1/team/{チームID})
+ * PATCH(http://localhost:3000/api/v1/team)
  */
-router.patch('/:id', function(req, res, next) {
+router.patch('/', function(req, res, next) {
   console.log(req)
   // TODO: 一部更新処理（優先度：低）
-  res.send({test : "PATCH 一部データ更新",
-            id : req.params.id});
+  res.send({test : "PATCH 一部データ更新(未実装)",
+            id : req.body.id});
 });
 
 /**
  * チーム削除API.<br/>
  * 論理削除。<br/>
- * DELETE(http://localhost:3000/api/v1/team/{チームID})
+ * DELETE(http://localhost:3000/api/v1/team)
  */
-router.delete('/:teamId', async function(req, res, next) {
-  console.log('DELETE:v1/team/{チームID} execution');
+router.delete('/', async function(req, res, next) {
+  console.log('DELETE:v1/team execution');
 
   // パラメータ取得
-  let teamId = req.params.teamId;
+  let teamId = req.body.teamId;
   validateUtil.validate400(res, teamId, "チームID", "teamId");
 
   // TODO: チームの存在チェック
@@ -211,20 +213,21 @@ router.delete('/:teamId', async function(req, res, next) {
 
 /**
  * チーム メンバー＆権限取得API.<br/>
- * GET(http://localhost:3000/api/v1/team/{チームID}/users)
+ * GET(http://localhost:3000/api/v1/team/users)
  */
 
 /**
  * チーム メンバー＆権限登録API.<br/>
- * POST(http://localhost:3000/api/v1/team/{チームID}/users)
+ * POST(http://localhost:3000/api/v1/team/users)
  */
-router.post('/:teamId/users', async function(req, res, next) {
-  console.log('POST:v1/team/{チームID}/users execution');
+router.post('/users', async function(req, res, next) {
+  console.log('POST:v1/team/users execution');
   // tokenからuserIdを取得
   let insertUserId = await tokenUtil.getUserId(req);
 
   // パラメータから登録情報を取得
-  let teamId = req.params.teamId;
+  let params = req.body;
+  let teamId = params.teamId;
   validateUtil.validate400(res, teamId, "チームID", "teamId");
 
   // チームの存在チェック
@@ -232,7 +235,6 @@ router.post('/:teamId/users', async function(req, res, next) {
     return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
   }
 
-  let params = req.body;
   // 機能名
   let functionName = params.functionName;
   validateUtil.validate400(res, functionName, "機能名", "functionName");
@@ -248,7 +250,7 @@ router.post('/:teamId/users', async function(req, res, next) {
     validateUtil.validate400(res, userId, "ユーザID", "userId");
 
     // メンバーの存在チェック
-   if (! userUtil.isUserId(res, userId)) {
+   if (! await userUtil.isUserId(res, userId)) {
     return res.status(500).send({message : "存在しないユーザIDです。(userId:" + userId + ")"});
    }
 

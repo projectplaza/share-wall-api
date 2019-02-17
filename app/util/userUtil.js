@@ -11,7 +11,7 @@ module.exports = {
    * @return true:存在する/false:存在しない
    */
   isUserId: async function(res, userId) {
-    console.log('userUtil - isUserId()');
+    console.log('SHARE-WALL-API-LOG : userUtil - isUserId()');
     // パラメータチェック
     if (userId == null) {
       res.status(500).send({message : "API ERROR. NOT userId."});
