@@ -28,7 +28,6 @@ const db = require('../../db');
 
 // util
 const tokenUtil = require('../../app/util/tokenUtil.js');
-const userUtil = require('../../app/util/userUtil.js');
 const teamUtil = require('../../app/util/teamUtil.js');
 const projectUtil = require('../../app/util/projectUtil.js');
 const docmentUtil = require('../../app/util/docmentUtil.js');
@@ -271,7 +270,7 @@ router.post('/folder', async function(req, res, next) {
   // フォルダID生成
   let folderId = await generatUtil.getDesignDocmentFolderId();
   // 順序
-  let orderNo = '0';
+  let orderNo = 0;
   // 登録日時
   let insertDate = new Date();
 
@@ -293,11 +292,12 @@ router.post('/folder', async function(req, res, next) {
 
   // 登録情報を返却
   res.send({
+    message : "フォルダの登録に成功しました。",
     teamId : teamId,
     projectId : projectId,
     folderId : folderId,
     folderName : folderName,
-    orderNo : orderNo,
+    order : orderNo,
     createUser : userId,
     createFunction : functionName,
     createDatetime : insertDate
@@ -378,7 +378,7 @@ router.post('/docment', async function(req, res, next) {
   }
 
   // バージョン(0)
-  let version = '0';
+  let version = 0;
 
   // コンテンツ登録SQL
   let contentSql = `
@@ -403,7 +403,7 @@ router.post('/docment', async function(req, res, next) {
     , projectId : projectId
     , folderId : folderId
     , docmentId : docmentId
-    , orderNo : orderNo
+    , order : orderNo
     , version : version
     , docmentName : docmentName
     , content : content
@@ -651,11 +651,12 @@ router.patch('/folder', async function(req, res, next) {
 
   // 更新情報を返却
   res.send({
+    message : "フォルダの更新に成功しました。",
     teamId : teamId,
     projectId : projectId,
     folderId : folderId,
     folderName : updateFolderName,
-    orderNo : updateOrderNo,
+    order : updateOrderNo,
     updateUser : userId,
     updateFunction : functionName,
     updateDatetime : updateDate
@@ -801,10 +802,11 @@ router.patch('/docment', async function(req, res, next) {
 
   // 更新情報を返却
   res.send({
+    message : "ドキュメントの更新に成功しました。",
     teamId : teamId,
     projectId : projectId,
     docmentId : docmentId,
-    orderNo : updateOrderNo,
+    order : updateOrderNo,
     version : updateVersion,
     docmentName : updateDocmentName,
     updateUser : userId,
