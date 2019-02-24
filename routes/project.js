@@ -17,6 +17,8 @@ const db = require('../db');
 const tokenUtil = require('../app/util/tokenUtil.js');
 // userUtil
 const userUtil = require('../app/util/userUtil.js');
+// projectUtil
+const projectUtil = require('../app/util/projectUtil.js');
 // validateUtil
 const validateUtil = require('../app/util/validateUtil.js');
 
@@ -125,7 +127,7 @@ router.post('/', async function(req, res, next) {
   validateUtil.validate400(res, functionName, "機能名", "functionName");
 
   // プロジェクトIDの利用可能チェック
-  if (await isProject(projectId)) {
+  if (await projectUtil.isProjectId(projectId)) {
     return res.status(500).send({message : "登録済みのプロジェクトIDです。(projectId:" + projectId + ")"});
   }
 
@@ -194,7 +196,7 @@ router.post('/users', async function(req, res, next) {
   validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
 
   // プロジェクトの存在チェック
-  if (! await isProject(projectId)) {
+  if (! await projectUtil.isProjectId(projectId)) {
     return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
   }
 
@@ -225,7 +227,7 @@ router.post('/users', async function(req, res, next) {
     validateUtil.validate400(res, administratorAuthority, "管理者権限", "administratorAuthority");
 
     // プロジェクトメンバーの存在チェック
-    if (await isProjectMember(res, projectId, userId)) {
+    if (await projectUtil.isProjectMember(projectId, userId)) {
       return res.status(500).send({message : "登録済みのデータです。(projectId:" + projectId + ", userId:" + userId + ")"});
     }
 
@@ -235,46 +237,6 @@ router.post('/users', async function(req, res, next) {
   }
   res.send(result);
 });
-
-/**
- * プロジェクトの存在判定
- * @param {*} projectId プロジェクトID
- * @return true:存在する/false:存在しない
- */
-async function isProject(projectId) {
-  console.log('project - isProject()');
-
-  // プロジェクト検索
-  let result = await db.query(
-    'SELECT count(project_id) FROM sw_m_project WHERE project_id = $1'
-    , [projectId]);
-
-    if (result != null && result.rows != null && result.rows[0].count > 0) {
-      return true;
-    }
-    return false;
-}
-
-/**
- * プロジェクトメンバの存在判定
- * @param {*} res
- * @param {*} projectId プロジェクトID
- * @param {*} userId ユーザID
- * @return true:存在する/false:存在しない
- */
-async function isProjectMember(res, projectId, userId) {
-  console.log('project - isProjectMember()');
-
-  // プロジェクトメンバー検索
-  let result = await db.query(
-    'SELECT count(project_id) FROM sw_m_project_member WHERE project_id = $1 AND user_id =$2'
-    , [projectId, userId]);
-
-    if (result != null && result.rows != null && result.rows[0].count > 0) {
-      return true;
-    }
-    return false;
-}
 
 /**
  * プロジェクトメンバの登録処理

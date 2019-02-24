@@ -19,6 +19,8 @@ const db = require('../db');
 const tokenUtil = require('../app/util/tokenUtil.js');
 // userUtil
 const userUtil = require('../app/util/userUtil.js');
+// teamUtil
+const teamUtil = require('../app/util/teamUtil.js');
 // validateUtil
 const validateUtil = require('../app/util/validateUtil.js');
 
@@ -134,8 +136,7 @@ router.post('/', async function(req, res, next) {
   validateUtil.validate400(res, functionName, "機能名", "functionName");
 
   // チームIDの利用可能チェック
-  // await checkTeam(res, teamId);
-  if (await isTeam(teamId)) {
+  if (await teamUtil.isTeamId(teamId)) {
     return res.status(500).send({message : "登録済みのチームIDです。(teamId:" + teamId + ")"});
   }
 
@@ -231,7 +232,7 @@ router.post('/users', async function(req, res, next) {
   validateUtil.validate400(res, teamId, "チームID", "teamId");
 
   // チームの存在チェック
-  if (! await isTeam(teamId)) {
+  if (! await teamUtil.isTeamId(teamId)) {
     return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
   }
 
@@ -272,43 +273,6 @@ router.post('/users', async function(req, res, next) {
   }
   res.send(result);
 });
-
-/**
- * チームの存在判定
- * @param {*} teamId チームID
- * @return true:存在する/false:存在しない
- */
-async function isTeam(teamId) {
-  console.log('team - isTeam()');
-
-  // チーム検索
-  let result = await db.query(
-    'SELECT count(team_id) FROM sw_m_team WHERE team_id = $1'
-    , [teamId]);
-
-    console.log(result)
-    console.log('result.rows[0].count : ' + result.rows[0].count)
-    if (result != null && result.rows != null && result.rows[0].count > 0) {
-      return true;
-    }
-    return false;
-}
-
-// NG時も処理が続いてしまうためNG
-// /**
-//  * チームの存在チェック
-//  * @param {*} res
-//  * @param {*} teamId チームID
-//  */
-// async function checkTeam(res, teamId) {
-//   console.log('team - checkTeam()');
-
-//   // チーム検索
-//   if (await isTeam(teamId)) {
-//     return res.status(500).send({message : "登録済みのチームIDです。(teamId:" + teamId + ")"});
-//   }
-//   return true;
-// }
 
 /**
  * チームメンバの存在判定
