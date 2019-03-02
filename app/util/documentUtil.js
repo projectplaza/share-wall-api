@@ -11,7 +11,7 @@ module.exports = {
    * @return true:存在する/false:存在しない
    */
   isFolderId: async function(res, folderId) {
-    console.log('SHARE-WALL-API-LOG : docmentUtil - isFolderId()');
+    console.log('SHARE-WALL-API-LOG : documentUtil - isFolderId()');
     // パラメータチェック
     if (folderId == null) {
       res.status(500).send({message : "API ERROR. NOT folderId."});
@@ -19,7 +19,7 @@ module.exports = {
 
     // マスタ検索
     let result = await db.query(
-      'SELECT count(folder_id) FROM sw_t_docment_folder WHERE folder_id = $1'
+      'SELECT count(folder_id) FROM sw_t_document_folder WHERE folder_id = $1'
       , [folderId]
     );
     if (result != null && result.rows != null && result.rows[0].count > 0) {
@@ -31,20 +31,20 @@ module.exports = {
   /**
    * マスタに存在するドキュメントIDか判定します。
    * @param {*} res レスポンス
-   * @param {*} docmentId ドキュメントID
+   * @param {*} documentId ドキュメントID
    * @return true:存在する/false:存在しない
    */
-  isDocmentId: async function(res, docmentId) {
-    console.log('SHARE-WALL-API-LOG : docmentUtil - isDocmentId()');
+  isDocumentId: async function(res, documentId) {
+    console.log('SHARE-WALL-API-LOG : documentUtil - isDocumentId()');
     // パラメータチェック
-    if (docmentId == null) {
-      res.status(500).send({message : "API ERROR. NOT docmentId."});
+    if (documentId == null) {
+      res.status(500).send({message : "API ERROR. NOT documentId."});
     }
 
     // マスタ検索
     let result = await db.query(
-      'SELECT count(docment_id) FROM sw_t_docment WHERE docment_id = $1'
-      , [docmentId]
+      'SELECT count(document_id) FROM sw_t_document WHERE document_id = $1'
+      , [documentId]
     );
     if (result != null && result.rows != null && result.rows[0].count > 0) {
       return true;

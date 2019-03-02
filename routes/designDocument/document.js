@@ -2,23 +2,23 @@
  * デザインドキュメントAPI.<br/>
  * 
  * フォルダ一覧取得API
- * GET(http://localhost:3000/api/v1/design_docments/folder/list)
+ * GET(http://localhost:3000/api/v1/design_documents/folder/list)
  * フォルダ新規作成API
- * POST(http://localhost:3000/api/v1/design_docments/folder)
+ * POST(http://localhost:3000/api/v1/design_documents/folder)
  * フォルダ更新API(名前or順序更新)
- * PATCH(http://localhost:3000/api/v1/design_docments/folder)
+ * PATCH(http://localhost:3000/api/v1/design_documents/folder)
  * フォルダ削除API
- * DELETE(http://localhost:3000/api/v1/design_docments/folder)
+ * DELETE(http://localhost:3000/api/v1/design_documents/folder)
  * ドキュメント一覧取得API
- * GET(http://localhost:3000/api/v1/design_docments/docment/list)
+ * GET(http://localhost:3000/api/v1/design_documents/document/list)
  * ドキュメント詳細取得API
- * GET(http://localhost:3000/api/v1/design_docments/docment)
+ * GET(http://localhost:3000/api/v1/design_documents/document)
  * ドキュメント新規作成API
- * POST(http://localhost:3000/api/v1/design_docments/docment)
+ * POST(http://localhost:3000/api/v1/design_documents/document)
  * ドキュメント更新API(順序or名前orコンテンツ更新)
- * PATCH(http://localhost:3000/api/v1/design_docments/docment)
+ * PATCH(http://localhost:3000/api/v1/design_documents/document)
  * ドキュメント削除API
- * DELETE(http://localhost:3000/api/v1/design_docments/docment)
+ * DELETE(http://localhost:3000/api/v1/design_documents/document)
  */
 var express = require('express');
 var router = express.Router();
@@ -30,17 +30,17 @@ const db = require('../../db');
 const tokenUtil = require('../../app/util/tokenUtil.js');
 const teamUtil = require('../../app/util/teamUtil.js');
 const projectUtil = require('../../app/util/projectUtil.js');
-const docmentUtil = require('../../app/util/docmentUtil.js');
+const documentUtil = require('../../app/util/documentUtil.js');
 const generatUtil = require('../../app/util/generatUtil.js');
 const validateUtil = require('../../app/util/validateUtil.js');
 
 /**
  * フォルダ一覧取得API
  * 並び順:フォルダ.順序 昇順
- * GET(http://localhost:3000/api/v1/design_docments/folder/list)
+ * GET(http://localhost:3000/api/v1/design_documents/folder/list)
  */
 router.get('/folder/list', async function(req, res, next) {
-  console.log('GET:v1/design_docments/folder/list execution');
+  console.log('GET:v1/design_documents/folder/list execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
@@ -61,7 +61,7 @@ router.get('/folder/list', async function(req, res, next) {
   // フォルダリスト取得SQL
   let sql = `
     SELECT * 
-    FROM sw_t_docment_folder 
+    FROM sw_t_document_folder 
     WHERE team_id = $1
     AND project_id = $2 
     ORDER BY order_no
@@ -92,10 +92,10 @@ router.get('/folder/list', async function(req, res, next) {
 /**
  * ドキュメント一覧取得API
  * 並び順:ドキュメント.順序 昇順
- * GET(http://localhost:3000/api/v1/design_docments/docment/list)
+ * GET(http://localhost:3000/api/v1/design_documents/document/list)
  */
-router.get('/docment/list', async function(req, res, next) {
-  console.log('GET:v1/design_docments/docment/list execution');
+router.get('/document/list', async function(req, res, next) {
+  console.log('GET:v1/design_documents/document/list execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
@@ -122,23 +122,23 @@ router.get('/docment/list', async function(req, res, next) {
     std.team_id
     , std.project_id
     , std.folder_id
-    , std.docment_id
+    , std.document_id
     , std.order_no
     , ver.version
-    , stdc.docment_name
+    , stdc.document_name
     , stdc.content
     , stdc.create_user
     , stdc.create_function
     , stdc.create_datetime
-    FROM sw_t_docment std 
+    FROM sw_t_document std 
     INNER JOIN ( 
-      SELECT docment_id, MAX(version) AS version 
-      FROM sw_t_docment_content 
-      GROUP BY docment_id 
+      SELECT document_id, MAX(version) AS version 
+      FROM sw_t_document_content 
+      GROUP BY document_id 
       ) AS ver 
-    ON std.docment_id = ver.docment_id 
-    LEFT JOIN sw_t_docment_content stdc 
-    ON ver.docment_id = stdc.docment_id 
+    ON std.document_id = ver.document_id 
+    LEFT JOIN sw_t_document_content stdc 
+    ON ver.document_id = stdc.document_id 
     and ver.version = stdc.version 
     WHERE std.team_id = $1 
     AND std.project_id = $2 
@@ -147,24 +147,24 @@ router.get('/docment/list', async function(req, res, next) {
   `;
   let param = [teamId, projectId, folderId];
 
-  let docments = await db.query(sql, param);
-  if (!docments.rows || docments.rows.length == 0) {
+  let documents = await db.query(sql, param);
+  if (!documents.rows || documents.rows.length == 0) {
     // ドキュメントが存在しない場合、エラー
     return res.status(500).send( { message: 'ドキュメントが存在しません。' } );
   }
 
-  console.log(docments.rows)
+  console.log(documents.rows)
   // 検索結果
   let result = [];
-  docments.rows.forEach(function(row) {
+  documents.rows.forEach(function(row) {
     result.push({
       "teamId" : row.team_id
       , "projectId" : row.project_id
       , "folderId" : row.folder_id
-      , "docmentId" : row.docment_id
+      , "documentId" : row.document_id
       , "order" : row.order_no
       , "version" : row.version
-      , "docmentName" : row.docment_name
+      , "documentName" : row.document_name
       , "content" : row.content
       , "createUser" : row.create_user
       , "createFunction" : row.create_function
@@ -176,10 +176,10 @@ router.get('/docment/list', async function(req, res, next) {
 
 /**
  * ドキュメント詳細取得API
- * GET(http://localhost:3000/api/v1/design_docments/docment)
+ * GET(http://localhost:3000/api/v1/design_documents/document)
  */
-router.get('/docment', async function(req, res, next) {
-  console.log('GET:v1/design_docments/docment execution');
+router.get('/document', async function(req, res, next) {
+  console.log('GET:v1/design_documents/document execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
@@ -187,55 +187,55 @@ router.get('/docment', async function(req, res, next) {
   // パラメータ取得
   let params = req.query;
   // ドキュメントID
-  let docmentId = params.docmentId;
-  validateUtil.validate400(res, docmentId, "ドキュメントID", "docmentId");
+  let documentId = params.documentId;
+  validateUtil.validate400(res, documentId, "ドキュメントID", "documentId");
 
   // SQL
   let sql = `
     SELECT 
-    std.docment_id
+    std.document_id
     , ver.version
-    , stdc.docment_name
+    , stdc.document_name
     , stdc.content
     , stdc.create_user
     , stdc.create_function
     , stdc.create_datetime
-    FROM sw_t_docment std 
+    FROM sw_t_document std 
     INNER JOIN ( 
-      SELECT docment_id, MAX(version) AS version 
-      FROM sw_t_docment_content 
-      WHERE docment_id = $1
-      GROUP BY docment_id 
+      SELECT document_id, MAX(version) AS version 
+      FROM sw_t_document_content 
+      WHERE document_id = $1
+      GROUP BY document_id 
       ) AS ver 
-    ON std.docment_id = ver.docment_id 
-    LEFT JOIN sw_t_docment_content stdc 
-    ON ver.docment_id = stdc.docment_id 
+    ON std.document_id = ver.document_id 
+    LEFT JOIN sw_t_document_content stdc 
+    ON ver.document_id = stdc.document_id 
     and ver.version = stdc.version 
-    WHERE std.docment_id = $1
+    WHERE std.document_id = $1
   `;
 
   // ドキュメント検索
-  let docment = await db.query(sql, [docmentId]);
-  validateUtil.queryValidate500(res, docment, "ドキュメント");
+  let document = await db.query(sql, [documentId]);
+  validateUtil.queryValidate500(res, document, "ドキュメント");
 
   // 検索結果を返却
   res.send({
-    "docmentId" : docment.rows[0].docment_id
-    , "version" : docment.rows[0].version
-    , "docmentName" : docment.rows[0].docment_name
-    , "content" : docment.rows[0].content
-    , "createUser" : docment.rows[0].create_user
-    , "createFunction" : docment.rows[0].create_function
-    , "createDatetime" : docment.rows[0].create_datetime
+    "documentId" : document.rows[0].document_id
+    , "version" : document.rows[0].version
+    , "documentName" : document.rows[0].document_name
+    , "content" : document.rows[0].content
+    , "createUser" : document.rows[0].create_user
+    , "createFunction" : document.rows[0].create_function
+    , "createDatetime" : document.rows[0].create_datetime
   });
 });
 
 /**
  * フォルダ新規作成API
- * POST(http://localhost:3000/api/v1/design_docments/folder)
+ * POST(http://localhost:3000/api/v1/design_documents/folder)
  */
 router.post('/folder', async function(req, res, next) {
-  console.log('POST:v1/design_docments/folder execution');
+  console.log('POST:v1/design_documents/folder execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
@@ -268,7 +268,7 @@ router.post('/folder', async function(req, res, next) {
   validateUtil.validate400(res, functionName, "機能名", "functionName");
 
   // フォルダID生成
-  let folderId = await generatUtil.getDesignDocmentFolderId();
+  let folderId = await generatUtil.getDesignDocumentFolderId();
   // 順序
   let orderNo = 0;
   // 登録日時
@@ -276,7 +276,7 @@ router.post('/folder', async function(req, res, next) {
 
   // フォルダ登録SQL
   let insertFolderSql = `
-  INSERT INTO sw_t_docment_folder 
+  INSERT INTO sw_t_document_folder 
   (team_id, project_id, folder_id, folder_name, order_no
     , create_user, create_function, create_datetime, update_user, update_function, update_datetime) 
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`;
@@ -306,10 +306,10 @@ router.post('/folder', async function(req, res, next) {
 
 /**
  * ドキュメント新規作成API
- * POST(http://localhost:3000/api/v1/design_docments/docment)
+ * POST(http://localhost:3000/api/v1/design_documents/document)
  */
-router.post('/docment', async function(req, res, next) {
-  console.log('POST:v1/design_docments/docment execution');
+router.post('/document', async function(req, res, next) {
+  console.log('POST:v1/design_documents/document execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
@@ -338,12 +338,12 @@ router.post('/docment', async function(req, res, next) {
   let folderId = params.folderId;
   validateUtil.validate400(res, folderId, "フォルダID", "folderId");
   // フォルダIDのマスタチェック
-  if (! await docmentUtil.isFolderId(res, folderId)) {
+  if (! await documentUtil.isFolderId(res, folderId)) {
     return res.status(500).send({message : "フォルダIDが存在しません。(folderId:" + folderId + ")"});
   }
   // ドキュメント名
-  let docmentName = params.docmentName;
-  validateUtil.validate400(res, docmentName, "ドキュメント名", "docmentName");
+  let documentName = params.documentName;
+  validateUtil.validate400(res, documentName, "ドキュメント名", "documentName");
   // コンテンツ
   let content = params.content;
   if (!content) {
@@ -355,26 +355,26 @@ router.post('/docment', async function(req, res, next) {
   validateUtil.validate400(res, functionName, "機能名", "functionName");
 
   // ドキュメントID生成
-  let docmentId = await generatUtil.getDesignDocmentDocmentId();
+  let documentId = await generatUtil.getDesignDocumentDocumentId();
   // 順序
   let orderNo = '0';
   // 登録日時
   let insertDate = new Date();
 
   // ドキュメント登録SQL
-  let docmentSql = `
-  INSERT INTO sw_t_docment 
-  (team_id, project_id, folder_id, docment_id, order_no
+  let documentSql = `
+  INSERT INTO sw_t_document 
+  (team_id, project_id, folder_id, document_id, order_no
     , create_user, create_function, create_datetime, update_user, update_function, update_datetime) 
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`;
 
   // ドキュメント登録
-  let newdocment = await db.query(
-    docmentSql
-    , [teamId, projectId, folderId, docmentId, orderNo, userId, functionName, insertDate, userId, functionName, insertDate]
+  let newdocument = await db.query(
+    documentSql
+    , [teamId, projectId, folderId, documentId, orderNo, userId, functionName, insertDate, userId, functionName, insertDate]
   );
-  if (newdocment.rowCount == 0) {
-    return res.status(500).send({message : "ドキュメント登録に失敗しました。(docmentId:" + docmentId + ")"});
+  if (newdocument.rowCount == 0) {
+    return res.status(500).send({message : "ドキュメント登録に失敗しました。(documentId:" + documentId + ")"});
   }
 
   // バージョン(0)
@@ -382,18 +382,18 @@ router.post('/docment', async function(req, res, next) {
 
   // コンテンツ登録SQL
   let contentSql = `
-  INSERT INTO sw_t_docment_content 
-  (docment_id, version, docment_name, content
+  INSERT INTO sw_t_document_content 
+  (document_id, version, document_name, content
     , create_user, create_function, create_datetime) 
   VALUES ($1, $2, $3, $4, $5, $6, $7)`;
 
   // コンテンツ登録
   let newContent = await db.query(
     contentSql
-    , [docmentId, version, docmentName, content, userId, functionName, insertDate]
+    , [documentId, version, documentName, content, userId, functionName, insertDate]
   );
   if (newContent.rowCount == 0) {
-    return res.status(500).send({message : "ドキュメントコンテンツ登録に失敗しました。(docmentId:" + docmentId + ")"});
+    return res.status(500).send({message : "ドキュメントコンテンツ登録に失敗しました。(documentId:" + documentId + ")"});
   }
 
   // 登録情報を返却
@@ -402,10 +402,10 @@ router.post('/docment', async function(req, res, next) {
     , teamId : teamId
     , projectId : projectId
     , folderId : folderId
-    , docmentId : docmentId
+    , documentId : documentId
     , order : orderNo
     , version : version
-    , docmentName : docmentName
+    , documentName : documentName
     , content : content
     , createUser : userId
     , createFunction : functionName
@@ -417,10 +417,10 @@ router.post('/docment', async function(req, res, next) {
  * フォルダ削除API
  * フォルダの物理削除。
  * フォルダ配下にドキュメントがある場合はエラー。
- * DELETE(http://localhost:3000/api/v1/design_docments/folder)
+ * DELETE(http://localhost:3000/api/v1/design_documents/folder)
  */
 router.delete('/folder', async function(req, res, next) {
-  console.log('DELETE:v1/design_docments/folder execution');
+  console.log('DELETE:v1/design_documents/folder execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
@@ -449,14 +449,14 @@ router.delete('/folder', async function(req, res, next) {
   let folderId = params.folderId;
   validateUtil.validate400(res, folderId, "フォルダID", "folderId");
   // フォルダIDのマスタチェック
-  if (! await docmentUtil.isFolderId(res, folderId)) {
+  if (! await documentUtil.isFolderId(res, folderId)) {
     return res.status(500).send({message : "フォルダIDが存在しません。(folderId:" + folderId + ")"});
   }
 
   // フォルダIDの利用状態チェック
   let useFolderId = await db.query(
     `SELECT count(folder_id) 
-     FROM sw_t_docment 
+     FROM sw_t_document 
      WHERE team_id = $1 
      AND project_id = $2 
      AND folder_id = $3`
@@ -469,7 +469,7 @@ router.delete('/folder', async function(req, res, next) {
 
   // フォルダ削除
   let delFolder = await db.query(
-    `DELETE FROM sw_t_docment_folder 
+    `DELETE FROM sw_t_document_folder 
      WHERE team_id = $1 
      AND project_id = $2 
      AND folder_id = $3`
@@ -490,10 +490,10 @@ router.delete('/folder', async function(req, res, next) {
 /**
  * ドキュメント削除API
  * ドキュメント、コンテンツの物理削除。
- * DELETE(http://localhost:3000/api/v1/design_docments/docment)
+ * DELETE(http://localhost:3000/api/v1/design_documents/document)
  */
-router.delete('/docment', async function(req, res, next) {
-  console.log('DELETE:v1/design_docments/docment execution');
+router.delete('/document', async function(req, res, next) {
+  console.log('DELETE:v1/design_documents/document execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
@@ -519,49 +519,49 @@ router.delete('/docment', async function(req, res, next) {
     return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
   }
   // ドキュメントID
-  let docmentId = params.docmentId;
-  validateUtil.validate400(res, docmentId, "ドキュメントID", "docmentId");
+  let documentId = params.documentId;
+  validateUtil.validate400(res, documentId, "ドキュメントID", "documentId");
   // ドキュメントIDのマスタチェック
-  if (! await docmentUtil.isDocmentId(res, docmentId)) {
-    return res.status(500).send({message : "ドキュメントIDが存在しません。(docmentId:" + docmentId + ")"});
+  if (! await documentUtil.isDocumentId(res, documentId)) {
+    return res.status(500).send({message : "ドキュメントIDが存在しません。(documentId:" + documentId + ")"});
   }
 
   // ドキュメント削除
-  let delDocment = await db.query(
-    `DELETE FROM sw_t_docment 
+  let delDocument = await db.query(
+    `DELETE FROM sw_t_document 
      WHERE team_id = $1 
      AND project_id = $2 
-     AND docment_id = $3`
-     , [teamId, projectId, docmentId]
+     AND document_id = $3`
+     , [teamId, projectId, documentId]
   );
-  if (delDocment.rowCount == 0) {
-    return res.status(500).send({message : "ドキュメント削除に失敗しました。(docmentId:" + docmentId + ")"});
+  if (delDocument.rowCount == 0) {
+    return res.status(500).send({message : "ドキュメント削除に失敗しました。(documentId:" + documentId + ")"});
   }
 
   // コンテンツ全削除
   let delContents = await db.query(
-    `DELETE FROM sw_t_docment_content 
-     WHERE docment_id = $1`
-     , [docmentId]
+    `DELETE FROM sw_t_document_content 
+     WHERE document_id = $1`
+     , [documentId]
   );
   if (delContents.rowCount == 0) {
-    return res.status(500).send({message : "コンテンツ削除に失敗しました。(docmentId:" + docmentId + ")"});
+    return res.status(500).send({message : "コンテンツ削除に失敗しました。(documentId:" + documentId + ")"});
   }
 
   res.send({
     message : "ドキュメントの削除に成功しました。"
     , teamId : teamId
     , projectId : projectId
-    , docmentId : docmentId
+    , documentId : documentId
   });
 });
 
 /**
  * フォルダ更新API(名前or順序更新)
- * PATCH(http://localhost:3000/api/v1/design_docments/folder)
+ * PATCH(http://localhost:3000/api/v1/design_documents/folder)
  */
 router.patch('/folder', async function(req, res, next) {
-  console.log('PATCH:v1/design_docments/folder execution');
+  console.log('PATCH:v1/design_documents/folder execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
@@ -590,7 +590,7 @@ router.patch('/folder', async function(req, res, next) {
   let folderId = params.folderId;
   validateUtil.validate400(res, folderId, "フォルダID", "folderId");
   // プロジェクトIDのマスタチェック
-  if (! await docmentUtil.isFolderId(res, folderId)) {
+  if (! await documentUtil.isFolderId(res, folderId)) {
     return res.status(500).send({message : "フォルダIDが存在しません。(folderId:" + folderId + ")"});
   }
   // フォルダ名
@@ -604,7 +604,7 @@ router.patch('/folder', async function(req, res, next) {
   // フォルダ検索
   let folder = await db.query(
     `SELECT * 
-     FROM sw_t_docment_folder
+     FROM sw_t_document_folder
      WHERE team_id = $1 
      AND project_id = $2 
      AND folder_id = $3 `
@@ -629,7 +629,7 @@ router.patch('/folder', async function(req, res, next) {
 
   // フォルダ更新SQL
   let updateFolderSql = `
-    UPDATE sw_t_docment_folder 
+    UPDATE sw_t_document_folder 
     SET folder_name = $1 
     , order_no = $2 
     , update_user = $3 
@@ -666,10 +666,10 @@ router.patch('/folder', async function(req, res, next) {
 /*
  * ドキュメント更新API(順序or名前orコンテンツ更新)
  * ドキュメント名、コンテンツの変更は新しいバージョンでコンテンツを作成。
- * PATCH(http://localhost:3000/api/v1/design_docments/docment)
+ * PATCH(http://localhost:3000/api/v1/design_documents/document)
  */
-router.patch('/docment', async function(req, res, next) {
-  console.log('PATCH:v1/design_docments/docment execution');
+router.patch('/document', async function(req, res, next) {
+  console.log('PATCH:v1/design_documents/document execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
@@ -695,14 +695,14 @@ router.patch('/docment', async function(req, res, next) {
     return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
   }
   // ドキュメントID
-  let docmentId = params.docmentId;
-  validateUtil.validate400(res, docmentId, "ドキュメントID", "docmentId");
+  let documentId = params.documentId;
+  validateUtil.validate400(res, documentId, "ドキュメントID", "documentId");
   // ドキュメントIDのマスタチェック
-  if (! await docmentUtil.isDocmentId(res, docmentId)) {
-    return res.status(500).send({message : "ドキュメントIDが存在しません。(docmentId:" + docmentId + ")"});
+  if (! await documentUtil.isDocumentId(res, documentId)) {
+    return res.status(500).send({message : "ドキュメントIDが存在しません。(documentId:" + documentId + ")"});
   }
   // ドキュメント名
-  let docmentName = params.docmentName;
+  let documentName = params.documentName;
   // コンテンツ
   let content = params.content;
   // 順序
@@ -712,20 +712,20 @@ router.patch('/docment', async function(req, res, next) {
   validateUtil.validate400(res, functionName, "機能名", "functionName");
 
   // ドキュメント情報を取得
-  let docmentInfo = await db.query(
+  let documentInfo = await db.query(
     `SELECT * 
-     FROM sw_t_docment
+     FROM sw_t_document
      WHERE team_id = $1 
      AND project_id = $2 
-     AND docment_id = $3 `
-     , [teamId, projectId, docmentId]
+     AND document_id = $3 `
+     , [teamId, projectId, documentId]
   );
-  if (docmentInfo.rowCount == 0) {
-    return res.status(500).send({message : "ドキュメント取得に失敗しました。(docmentId:" + docmentId + ")"});
+  if (documentInfo.rowCount == 0) {
+    return res.status(500).send({message : "ドキュメント取得に失敗しました。(documentId:" + documentId + ")"});
   }
 
   // 更新用順序
-  let updateOrderNo = docmentInfo.rows[0].order_no;
+  let updateOrderNo = documentInfo.rows[0].order_no;
   if (validateUtil.isVal(orderNo)) {
     updateOrderNo = orderNo;
   }
@@ -733,48 +733,48 @@ router.patch('/docment', async function(req, res, next) {
   let updateDate = new Date();
 
   // ドキュメント更新SQL
-  let updateDocmentSql = `
-    UPDATE sw_t_docment 
+  let updateDocumentSql = `
+    UPDATE sw_t_document 
     SET order_no = $1 
     , update_user = $2 
     , update_function = $3 
     , update_datetime = $4 
     WHERE team_id = $5 
     AND project_id = $6 
-    AND docment_id = $7 
+    AND document_id = $7 
   `;
 
   // ドキュメント更新
-  let updDocment = await db.query(
-    updateDocmentSql
-    , [updateOrderNo, userId, functionName, updateDate, teamId, projectId, docmentId]
+  let updDocument = await db.query(
+    updateDocumentSql
+    , [updateOrderNo, userId, functionName, updateDate, teamId, projectId, documentId]
   );
-  if (updDocment.rowCount == 0) {
-    return res.status(500).send({message : "ドキュメント更新に失敗しました。(docmentId:" + docmentId + ")"});
+  if (updDocument.rowCount == 0) {
+    return res.status(500).send({message : "ドキュメント更新に失敗しました。(documentId:" + documentId + ")"});
   }
 
   // 最新のコンテンツ情報を取得
   let contentInfo = await db.query(
     `SELECT * 
-    FROM sw_t_docment_content stdc 
+    FROM sw_t_document_content stdc 
     INNER JOIN (
-      SELECT docment_id, MAX(version) AS version 
-      FROM sw_t_docment_content
-      WHERE docment_id = $1 
-      GROUP BY docment_id
+      SELECT document_id, MAX(version) AS version 
+      FROM sw_t_document_content
+      WHERE document_id = $1 
+      GROUP BY document_id
     ) ver
-    ON stdc.docment_id = ver.docment_id 
+    ON stdc.document_id = ver.document_id 
     AND stdc.version = ver.version `
-     , [docmentId]
+     , [documentId]
   );
   if (contentInfo.rowCount == 0) {
-    return res.status(500).send({message : "コンテンツ取得に失敗しました。(docmentId:" + docmentId + ")"});
+    return res.status(500).send({message : "コンテンツ取得に失敗しました。(documentId:" + documentId + ")"});
   }
 
   // 更新用ドキュメント名
-  let updateDocmentName = contentInfo.rows[0].docment_name;
-  if (validateUtil.isVal(docmentName)) {
-    updateDocmentName = docmentName;
+  let updateDocumentName = contentInfo.rows[0].document_name;
+  if (validateUtil.isVal(documentName)) {
+    updateDocumentName = documentName;
   }
   // 更新用コンテンツ
   let updateContent = contentInfo.rows[0].content;
@@ -786,18 +786,18 @@ router.patch('/docment', async function(req, res, next) {
 
   // コンテンツ登録SQL
   let insertContentSql = `
-  INSERT INTO sw_t_docment_content 
-  (docment_id, version, docment_name, content
+  INSERT INTO sw_t_document_content 
+  (document_id, version, document_name, content
     , create_user, create_function, create_datetime) 
   VALUES ($1, $2, $3, $4, $5, $6, $7)`;
 
   // コンテンツ登録
   let newContent = await db.query(
     insertContentSql
-    , [docmentId, updateVersion, updateDocmentName, updateContent, userId, functionName, updateDate]
+    , [documentId, updateVersion, updateDocumentName, updateContent, userId, functionName, updateDate]
   );
   if (newContent.rowCount == 0) {
-    return res.status(500).send({message : "コンテンツ登録に失敗しました。(docmentId:" + docmentId + ")"});
+    return res.status(500).send({message : "コンテンツ登録に失敗しました。(documentId:" + documentId + ")"});
   }
 
   // 更新情報を返却
@@ -805,10 +805,10 @@ router.patch('/docment', async function(req, res, next) {
     message : "ドキュメントの更新に成功しました。",
     teamId : teamId,
     projectId : projectId,
-    docmentId : docmentId,
+    documentId : documentId,
     order : updateOrderNo,
     version : updateVersion,
-    docmentName : updateDocmentName,
+    documentName : updateDocumentName,
     updateUser : userId,
     updateFunction : functionName,
     updateDatetime : updateDate

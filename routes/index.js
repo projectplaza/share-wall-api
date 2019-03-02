@@ -5,7 +5,7 @@ const user = require('./user');
 const team = require('./team');
 const project = require('./project');
 // 機能
-const designDocment = require('./designDocment/docment');
+const designDocument = require('./designDocument/document');
 
 module.exports = (app) => {
   // ログイン
@@ -20,6 +20,6 @@ module.exports = (app) => {
   app.use('/api/v1/projects', project);
 
   // デザインドキュメント
-  app.use('/api/v1/design_docments', designDocment);
+  app.use('/api/v1/design_documents', designDocument);
   // etc..
 }

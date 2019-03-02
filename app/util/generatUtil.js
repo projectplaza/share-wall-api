@@ -1,6 +1,6 @@
 
-// docmentUtil
-const docmentUtil = require('./docmentUtil.js');
+// documentUtil
+const documentUtil = require('./documentUtil.js');
 
 module.exports = {
 
@@ -35,8 +35,8 @@ module.exports = {
    * @param {*} res レスポンス
    * @return {*} フォルダID
    */
-  getDesignDocmentFolderId: async function(res) {
-    console.log('SHARE-WALL-API-LOG : generatUtil - getDesignDocmentFolderId()');
+  getDesignDocumentFolderId: async function(res) {
+    console.log('SHARE-WALL-API-LOG : generatUtil - getDesignDocumentFolderId()');
 
     let folderId = '';
 
@@ -44,9 +44,9 @@ module.exports = {
     folderId = this.getRandomStr(res, 15);
 
     // フォルダIDの重複チェック
-    if (await docmentUtil.isFolderId(res, folderId)) {
+    if (await documentUtil.isFolderId(res, folderId)) {
       // 重複した場合、もう一度IDを生成
-      folderId = this.getDesignDocmentFolderId();
+      folderId = this.getDesignDocumentFolderId();
     }
 
     // フォルダIDを返却
@@ -59,21 +59,21 @@ module.exports = {
    * @param {*} res レスポンス
    * @return {*} ドキュメントID
    */
-  getDesignDocmentDocmentId: async function(res) {
-    console.log('SHARE-WALL-API-LOG : generatUtil - getDesignDocmentDocmentId()');
+  getDesignDocumentDocumentId: async function(res) {
+    console.log('SHARE-WALL-API-LOG : generatUtil - getDesignDocumentDocumentId()');
 
-    let docmentId = '';
+    let documentId = '';
 
     // ドキュメントIDを生成
-    docmentId = this.getRandomStr(res, 15);
+    documentId = this.getRandomStr(res, 15);
 
     // ドキュメントIDの重複チェック
-    if (await docmentUtil.isDocmentId(res, docmentId)) {
+    if (await documentUtil.isDocumentId(res, documentId)) {
       // 重複した場合、もう一度IDを生成
-      docmentId = this.getDesignDocmentDocmentId();
+      documentId = this.getDesignDocumentDocumentId();
     }
 
     // フォルダIDを返却
-    return docmentId;
+    return documentId;
   }
 }
