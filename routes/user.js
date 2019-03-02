@@ -19,7 +19,7 @@ router.get('/', async function(req, res, next) {
     var token = req.body.token || req.query.token || req.headers['x-access-token'];
     // ※認証を通過しているのでトークンの有無はチェックしない
     // トークンからユーザIDを取得
-    let tokens = await db.query('SELECT * FROM sw_token WHERE token = $1', [token]);
+    let tokens = await db.query('SELECT * FROM sw_t_token WHERE token = $1', [token]);
     if (!tokens.rows || tokens.rows.length == 0) {
         res.status(500).send({message : "トークン情報が見つかりません。"});
        return;
@@ -49,7 +49,7 @@ router.get('/friend', async function(req, res, next) {
     var token = req.body.token || req.query.token || req.headers['x-access-token'];
     // ※認証を通過しているのでトークンの有無はチェックしない
     // トークンからユーザIDを取得
-    let tokens = await db.query('SELECT * FROM sw_token WHERE token = $1', [token]);
+    let tokens = await db.query('SELECT * FROM sw_t_token WHERE token = $1', [token]);
     if (!tokens.rows || tokens.rows.length == 0) {
         res.status(500).send({message : "トークン情報が見つかりません。"});
         return;

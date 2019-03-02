@@ -36,15 +36,15 @@ router.post('/v1/login', async function(req, res, next) {
   let params = req.body;
   let userId = params.userId;
   if (userId == undefined || userId == "") {
-    res.status(500).send({message : "ユーザIDが入力されていません。"});
+    res.status(400).send({message : "ユーザIDが入力されていません。(userId:" + userId + ")"});
   }
   if (params.password == undefined || params.password == "") {
-    res.status(500).send({message : "パスワードが入力されていません。"});
+    res.status(400).send({message : "パスワードが入力されていません。(password:" + password + ")"});
   }
   // ユーザ検索
   const { rows } = await db.query('SELECT * FROM sw_m_user WHERE user_id = $1', [userId]);
   if (!rows || rows.length == 0) {
-    return res.status(500).send( { success: false, message: 'No User Data.' } );
+    return res.status(400).send( { success: false, message: 'ユーザIDが存在しません。' } );
   }
   // 判定とトークン生成
   for( var i = 0; i < rows.length; i ++ ) {
@@ -54,13 +54,20 @@ router.post('/v1/login', async function(req, res, next) {
         expiresIn: '720h'
       });
 
+      // 登録日時
+      let insertDate = new Date();
+
       // トークンをDBへ登録
-      let nowTokens = await db.query('SELECT * FROM sw_token WHERE user_id = $1', [userId]);
+      let nowTokens = await db.query('SELECT * FROM sw_t_token WHERE user_id = $1', [userId]);
       if (nowTokens.rows && nowTokens.rows.length > 0) {
       // トークン情報があれば削除
-      let delTokens = await db.query('DELETE FROM sw_token WHERE user_id = $1', [userId]);
+      let delTokens = await db.query('DELETE FROM sw_t_token WHERE user_id = $1', [userId]);
       }
-      let newTokens = await db.query('INSERT INTO sw_token (token, user_id) VALUES ($1, $2)', [token, userId]);
+      let newTokens = await db.query(
+        `INSERT INTO sw_t_token (token, user_id, create_user, create_function, create_datetime)
+         VALUES ($1, $2, $3, $4, $5)`
+        , [token, userId, userId, "system", insertDate]
+      );
 
       res.json( { success: true, message: 'Authentication successfully finished.', token: token } );
       return;
@@ -113,7 +120,7 @@ router.post('/v1/login/check', async function(req, res, next) {
   var token = req.body.token || req.query.token || req.headers['x-access-token'];
   // ※認証を通過しているのでトークンの有無はチェックしない
   // トークンからユーザIDを取得
-  let tokens = await db.query('SELECT * FROM sw_token WHERE token = $1', [token]);
+  let tokens = await db.query('SELECT * FROM sw_t_token WHERE token = $1', [token]);
   if (!tokens.rows || tokens.rows.length == 0) {
     res.json( { success: false, message: 'No token.' } );
   }
