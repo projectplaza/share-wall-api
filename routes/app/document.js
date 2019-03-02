@@ -27,10 +27,10 @@ var router = express.Router();
 const db = require('../../db');
 
 // util
-const tokenUtil = require('../../app/util/tokenUtil.js');
-const teamUtil = require('../../app/util/teamUtil.js');
-const projectUtil = require('../../app/util/projectUtil.js');
-const documentUtil = require('../../app/util/documentUtil.js');
+const tokenUtil = require('../../app/util/main/tokenUtil.js');
+const teamUtil = require('../../app/util/main/teamUtil.js');
+const projectUtil = require('../../app/util/main/projectUtil.js');
+const documentUtil = require('../../app/util/app/documentUtil.js');
 const generatUtil = require('../../app/util/generatUtil.js');
 const validateUtil = require('../../app/util/validateUtil.js');
 

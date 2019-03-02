@@ -1,6 +1,6 @@
 
 // documentUtil
-const documentUtil = require('./documentUtil.js');
+const documentUtil = require('./app/documentUtil.js');
 
 module.exports = {
 

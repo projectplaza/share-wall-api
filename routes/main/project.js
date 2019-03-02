@@ -14,11 +14,11 @@ var router = express.Router();
 const db = require('../../db');
 
 // tokenUtil
-const tokenUtil = require('../../app/util/tokenUtil.js');
+const tokenUtil = require('../../app/util/main/tokenUtil.js');
 // userUtil
-const userUtil = require('../../app/util/userUtil.js');
+const userUtil = require('../../app/util/main/userUtil.js');
 // projectUtil
-const projectUtil = require('../../app/util/projectUtil.js');
+const projectUtil = require('../../app/util/main/projectUtil.js');
 // validateUtil
 const validateUtil = require('../../app/util/validateUtil.js');
 
