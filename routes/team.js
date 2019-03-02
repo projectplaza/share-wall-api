@@ -136,7 +136,7 @@ router.post('/', async function(req, res, next) {
   validateUtil.validate400(res, functionName, "機能名", "functionName");
 
   // チームIDの利用可能チェック
-  if (await teamUtil.isTeamId(teamId)) {
+  if (await teamUtil.isTeamId(res, teamId)) {
     return res.status(500).send({message : "登録済みのチームIDです。(teamId:" + teamId + ")"});
   }
 
@@ -232,7 +232,7 @@ router.post('/users', async function(req, res, next) {
   validateUtil.validate400(res, teamId, "チームID", "teamId");
 
   // チームの存在チェック
-  if (! await teamUtil.isTeamId(teamId)) {
+  if (! await teamUtil.isTeamId(res, teamId)) {
     return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
   }
 
