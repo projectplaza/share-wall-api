@@ -70,7 +70,7 @@ router.get('/folder/list', async function(req, res, next) {
   let folders = await db.query(sql, [teamId, projectId]);
   if (!folders.rows || folders.rows.length == 0) {
     // フォルダが存在しない場合、空のリストを返却
-    return res.send({});
+    return res.send([]);
   }
   // 検索結果
   let result = [];
