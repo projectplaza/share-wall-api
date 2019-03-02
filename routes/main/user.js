@@ -7,7 +7,7 @@ var express = require('express');
 var router = express.Router();
 
 // DBアクセス
-const db = require('../db');
+const db = require('../../db');
 
 /**
  * ユーザAPI.<br/>

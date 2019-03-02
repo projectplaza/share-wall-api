@@ -11,16 +11,16 @@ var express = require('express');
 var router = express.Router();
 
 // DBアクセス
-const db = require('../db');
+const db = require('../../db');
 
 // tokenUtil
-const tokenUtil = require('../app/util/tokenUtil.js');
+const tokenUtil = require('../../app/util/tokenUtil.js');
 // userUtil
-const userUtil = require('../app/util/userUtil.js');
+const userUtil = require('../../app/util/userUtil.js');
 // projectUtil
-const projectUtil = require('../app/util/projectUtil.js');
+const projectUtil = require('../../app/util/projectUtil.js');
 // validateUtil
-const validateUtil = require('../app/util/validateUtil.js');
+const validateUtil = require('../../app/util/validateUtil.js');
 
 /**
  * プロジェクト一覧取得API.<br/>

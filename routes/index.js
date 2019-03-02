@@ -1,17 +1,15 @@
 // ./routes/index.js
-const login = require('./login');
-const test = require('./test');
-const user = require('./user');
-const team = require('./team');
-const project = require('./project');
+const login = require('./main/login');
+const user = require('./main/user');
+const team = require('./main/team');
+const project = require('./main/project');
 // 機能
-const designDocument = require('./designDocument/document');
+const designDocument = require('./app/document');
+// const wall = require('./app/wall');
 
 module.exports = (app) => {
   // ログイン
   app.use('/api', login);
-  // テスト
-  app.use('/api/v1/tests', test);
   // ユーザプロフィール
   app.use('/api/v1/prof', user);
   // チーム
@@ -21,5 +19,7 @@ module.exports = (app) => {
 
   // デザインドキュメント
   app.use('/api/v1/design_documents', designDocument);
+  // ウォール
+  // app.use('/api/v1/wall', wall);
   // etc..
 }

@@ -17,11 +17,11 @@ const router = new Router();
 module.exports = router;
 
 // DBアクセス
-const db = require('../db');
+const db = require('../../db');
 
 // 認証
 var jwt = require( 'jsonwebtoken' );
-var config = require('../config');
+var config = require('../../config');
 
 // application variables
 app.set('superSecret', config.secret);
