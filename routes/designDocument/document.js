@@ -416,7 +416,7 @@ router.post('/document', async function(req, res, next) {
 /**
  * フォルダ削除API
  * フォルダの物理削除。
- * フォルダ配下にドキュメントがある場合はエラー。
+ * フォルダ配下にドキュメントがある場合はドキュメントも物理削除。
  * DELETE(http://localhost:3000/api/v1/design_documents/folder)
  */
 router.delete('/folder', async function(req, res, next) {
@@ -455,16 +455,24 @@ router.delete('/folder', async function(req, res, next) {
 
   // フォルダIDの利用状態チェック
   let useFolderId = await db.query(
-    `SELECT count(folder_id) 
+    `SELECT document_id 
      FROM sw_t_document 
      WHERE team_id = $1 
      AND project_id = $2 
      AND folder_id = $3`
     , [teamId, projectId, folderId]
   );
-  if (useFolderId != null && useFolderId.rows != null && useFolderId.rows[0].count > 0) {
-    // ドキュメントで対象のフォルダIDが1件以上利用されている場合、エラー
-    return res.status(500).send({message : "ドキュメントが利用中のため削除できません。"});
+  if (useFolderId != null && useFolderId.rows != null && useFolderId.rowCount > 0) {
+    // ドキュメントで対象のフォルダIDが1件以上利用されている場合、ドキュメントも削除
+
+    await Promise.all(
+      useFolderId.rows.map(async function(row) {
+        // ドキュメント＆コンテンツ削除処理
+        if (! await deleteDocument(teamId, projectId, row.document_id)) {
+          res.status(500).send({message : "ドキュメント削除に失敗しました。(documentId:" + row.document_id + ")"});
+        }
+       })
+    );
   }
 
   // フォルダ削除
@@ -526,6 +534,24 @@ router.delete('/document', async function(req, res, next) {
     return res.status(500).send({message : "ドキュメントIDが存在しません。(documentId:" + documentId + ")"});
   }
 
+  // ドキュメント＆コンテンツ削除処理
+  if (await deleteDocument(teamId, projectId, documentId)) {
+    res.send({
+      message : "ドキュメントの削除に成功しました。"
+      , teamId : teamId
+      , projectId : projectId
+      , documentId : documentId
+    });
+  } else {
+    res.status(500).send({
+      message : "ドキュメント削除に失敗しました。(documentId:" + documentId + ")"
+    });
+  }
+});
+
+async function deleteDocument(teamId, projectId, documentId) {
+  console.log('document - deleteDocument()');
+
   // ドキュメント削除
   let delDocument = await db.query(
     `DELETE FROM sw_t_document 
@@ -535,7 +561,8 @@ router.delete('/document', async function(req, res, next) {
      , [teamId, projectId, documentId]
   );
   if (delDocument.rowCount == 0) {
-    return res.status(500).send({message : "ドキュメント削除に失敗しました。(documentId:" + documentId + ")"});
+    return false;
+    // return res.status(500).send({message : "ドキュメント削除に失敗しました。(documentId:" + documentId + ")"});
   }
 
   // コンテンツ全削除
@@ -545,16 +572,12 @@ router.delete('/document', async function(req, res, next) {
      , [documentId]
   );
   if (delContents.rowCount == 0) {
-    return res.status(500).send({message : "コンテンツ削除に失敗しました。(documentId:" + documentId + ")"});
+    return false;
+    // return res.status(500).send({message : "コンテンツ削除に失敗しました。(documentId:" + documentId + ")"});
   }
 
-  res.send({
-    message : "ドキュメントの削除に成功しました。"
-    , teamId : teamId
-    , projectId : projectId
-    , documentId : documentId
-  });
-});
+  return true;
+}
 
 /**
  * フォルダ更新API(名前or順序更新)
