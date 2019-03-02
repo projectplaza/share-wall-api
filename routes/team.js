@@ -174,12 +174,12 @@ router.put('/', function(req, res, next) {
 
 /**
  * チーム情報を一部更新API（※いらない？とりあえず未実装のまま放置。）.<br/>
- * PATCH(http://localhost:3000/api/v1/team)
+ * PUT(http://localhost:3000/api/v1/team)
  */
-router.patch('/', function(req, res, next) {
+router.put('/', function(req, res, next) {
   console.log(req)
   // TODO: 一部更新処理（優先度：低）
-  res.send({test : "PATCH 一部データ更新(未実装)",
+  res.send({test : "PUT 一部データ更新(未実装)",
             id : req.body.id});
 });
 

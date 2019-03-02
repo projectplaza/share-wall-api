@@ -6,7 +6,7 @@
  * フォルダ新規作成API
  * POST(http://localhost:3000/api/v1/design_documents/folder)
  * フォルダ更新API(名前or順序更新)
- * PATCH(http://localhost:3000/api/v1/design_documents/folder)
+ * PUT(http://localhost:3000/api/v1/design_documents/folder)
  * フォルダ削除API
  * DELETE(http://localhost:3000/api/v1/design_documents/folder)
  * ドキュメント一覧取得API
@@ -16,7 +16,7 @@
  * ドキュメント新規作成API
  * POST(http://localhost:3000/api/v1/design_documents/document)
  * ドキュメント更新API(順序or名前orコンテンツ更新)
- * PATCH(http://localhost:3000/api/v1/design_documents/document)
+ * PUT(http://localhost:3000/api/v1/design_documents/document)
  * ドキュメント削除API
  * DELETE(http://localhost:3000/api/v1/design_documents/document)
  */
@@ -558,10 +558,10 @@ router.delete('/document', async function(req, res, next) {
 
 /**
  * フォルダ更新API(名前or順序更新)
- * PATCH(http://localhost:3000/api/v1/design_documents/folder)
+ * PUT(http://localhost:3000/api/v1/design_documents/folder)
  */
-router.patch('/folder', async function(req, res, next) {
-  console.log('PATCH:v1/design_documents/folder execution');
+router.put('/folder', async function(req, res, next) {
+  console.log('PUT:v1/design_documents/folder execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
@@ -666,10 +666,10 @@ router.patch('/folder', async function(req, res, next) {
 /*
  * ドキュメント更新API(順序or名前orコンテンツ更新)
  * ドキュメント名、コンテンツの変更は新しいバージョンでコンテンツを作成。
- * PATCH(http://localhost:3000/api/v1/design_documents/document)
+ * PUT(http://localhost:3000/api/v1/design_documents/document)
  */
-router.patch('/document', async function(req, res, next) {
-  console.log('PATCH:v1/design_documents/document execution');
+router.put('/document', async function(req, res, next) {
+  console.log('PUT:v1/design_documents/document execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req);
