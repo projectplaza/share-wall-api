@@ -30,7 +30,7 @@ router.get('/list', async function(req, res, next) {
   console.log('GET:v1/project/ execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータ取得（存在すれば検索条件として利用する）
   let params = req.query;
@@ -68,7 +68,7 @@ router.get('/list', async function(req, res, next) {
 router.get('/', async function(req, res, next) {
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータ取得
   let params = req.query;
@@ -110,7 +110,7 @@ router.post('/', async function(req, res, next) {
   console.log('POST:v1/project execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータから登録情報を取得
   let params = req.body;
@@ -188,7 +188,7 @@ router.delete('/', async function(req, res, next) {
 router.post('/users', async function(req, res, next) {
   console.log('POST:v1/project/users execution');
   // tokenからuserIdを取得
-  let insertUserId = await tokenUtil.getUserId(req);
+  let insertUserId = await tokenUtil.getUserId(req, res);
 
   // パラメータから登録情報を取得
   let params = req.body;

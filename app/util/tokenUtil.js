@@ -7,8 +7,9 @@ module.exports = {
   /**
    * リクエスト情報(トークン)からユーザIDを取得＆返却する。
    * @param {*} req リクエスト情報 
+   * @param {*} res レスポンス情報
    */
-  getUserId: async function(req) {
+  getUserId: async function(req, res) {
     console.log('tokenUtil - getUserId()');
     // トークンを取得
     var token = req.body.token || req.query.token || req.headers['x-access-token'];

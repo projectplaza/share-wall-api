@@ -43,7 +43,7 @@ router.get('/folder/list', async function(req, res, next) {
   console.log('GET:v1/design_documents/folder/list execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータ取得
   let params = req.query;
@@ -69,8 +69,8 @@ router.get('/folder/list', async function(req, res, next) {
   // 検索
   let folders = await db.query(sql, [teamId, projectId]);
   if (!folders.rows || folders.rows.length == 0) {
-    // フォルダが存在しない場合、エラー
-    return res.status(500).send( { message: 'フォルダが存在しません。' } );
+    // フォルダが存在しない場合、空のリストを返却
+    return res.send({});
   }
   // 検索結果
   let result = [];
@@ -98,7 +98,7 @@ router.get('/document/list', async function(req, res, next) {
   console.log('GET:v1/design_documents/document/list execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータ取得
   let params = req.query;
@@ -149,8 +149,8 @@ router.get('/document/list', async function(req, res, next) {
 
   let documents = await db.query(sql, param);
   if (!documents.rows || documents.rows.length == 0) {
-    // ドキュメントが存在しない場合、エラー
-    return res.status(500).send( { message: 'ドキュメントが存在しません。' } );
+    // ドキュメントが存在しない場合、空のリストを返却
+    return res.send([]);
   }
 
   console.log(documents.rows)
@@ -182,7 +182,7 @@ router.get('/document', async function(req, res, next) {
   console.log('GET:v1/design_documents/document execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータ取得
   let params = req.query;
@@ -238,7 +238,7 @@ router.post('/folder', async function(req, res, next) {
   console.log('POST:v1/design_documents/folder execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータから登録情報を取得
   let params = req.body;
@@ -312,7 +312,7 @@ router.post('/document', async function(req, res, next) {
   console.log('POST:v1/design_documents/document execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータから登録情報を取得
   let params = req.body;
@@ -423,7 +423,7 @@ router.delete('/folder', async function(req, res, next) {
   console.log('DELETE:v1/design_documents/folder execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータから登録情報を取得
   let params = req.body;
@@ -496,7 +496,7 @@ router.delete('/document', async function(req, res, next) {
   console.log('DELETE:v1/design_documents/document execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータから登録情報を取得
   let params = req.body;
@@ -564,7 +564,7 @@ router.put('/folder', async function(req, res, next) {
   console.log('PUT:v1/design_documents/folder execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータから登録情報を取得
   let params = req.body;
@@ -672,7 +672,7 @@ router.put('/document', async function(req, res, next) {
   console.log('PUT:v1/design_documents/document execution');
 
   // tokenからuserIdを取得
-  let userId = await tokenUtil.getUserId(req);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータから登録情報を取得
   let params = req.body;
