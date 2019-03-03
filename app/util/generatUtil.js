@@ -46,7 +46,7 @@ module.exports = {
     // フォルダIDの重複チェック
     if (await documentUtil.isFolderId(res, folderId)) {
       // 重複した場合、もう一度IDを生成
-      folderId = this.getDesignDocumentFolderId();
+      folderId = this.getDesignDocumentFolderId(res);
     }
 
     // フォルダIDを返却

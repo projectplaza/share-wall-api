@@ -291,7 +291,7 @@ router.post('/folder', async function(req, res, next) {
   }
 
   // フォルダID生成
-  let folderId = await generatUtil.getDesignDocumentFolderId();
+  let folderId = await generatUtil.getDesignDocumentFolderId(res);
   // 順序
   let orderNo = 0;
   // 登録日時

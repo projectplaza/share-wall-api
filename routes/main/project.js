@@ -278,7 +278,7 @@ router.post('/users', async function(req, res, next) {
     }
 
     // プロジェクトメンバーの存在チェック
-    if (await projectUtil.isProjectMember(projectId, userId)) {
+    if (await projectUtil.isProjectMember(res, projectId, userId)) {
       return res.status(500).send({message : "登録済みのデータです。(projectId:" + projectId + ", userId:" + userId + ")"});
     }
 
