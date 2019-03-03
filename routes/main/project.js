@@ -1,11 +1,13 @@
 /**
  * プロジェクトAPI.<br/>
  * 
- * GET(http://localhost:3000/api/v1/project/list)
- * GET(http://localhost:3000/api/v1/project)
- * POST(http://localhost:3000/api/v1/project)
- * DELETE(http://localhost:3000/api/v1/project)
- * POST(http://localhost:3000/api/v1/project/users)
+ * プロジェクト一覧取得API
+ * GET(http://localhost:3000/api/v1/projects/list)
+ * プロジェクト取得API
+ * GET(http://localhost:3000/api/v1/projects)
+ * POST(http://localhost:3000/api/v1/projects)
+ * DELETE(http://localhost:3000/api/v1/projects)
+ * POST(http://localhost:3000/api/v1/projects/users)
  */
 var express = require('express');
 var router = express.Router();
@@ -13,57 +15,69 @@ var router = express.Router();
 // DBアクセス
 const db = require('../../db');
 
-// tokenUtil
+// util
 const tokenUtil = require('../../app/util/main/tokenUtil.js');
-// userUtil
 const userUtil = require('../../app/util/main/userUtil.js');
-// projectUtil
+const teamUtil = require('../../app/util/main/teamUtil.js');
 const projectUtil = require('../../app/util/main/projectUtil.js');
-// validateUtil
 const validateUtil = require('../../app/util/validateUtil.js');
+const messageUtil = require('../../app/util/messageUtil.js');
 
 /**
  * プロジェクト一覧取得API.<br/>
- * GET(http://localhost:3000/api/v1/project/list)
+ * GET(http://localhost:3000/api/v1/projects/list)
  */
 router.get('/list', async function(req, res, next) {
-  console.log('GET:v1/project/ execution');
+  console.log('GET:v1/projects/list execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req, res);
 
-  // パラメータ取得（存在すれば検索条件として利用する）
+  // パラメータ取得
   let params = req.query;
-  // プロジェクトID
-  let projectId = params.projectId;
-  // プロジェクト名
-  let projectName = params.projectName;
-
-  // TODO: ユーザが見える範囲のみ返却
-
-  // SQL生成
-  let sql = "SELECT * FROM sw_m_project WHERE 1 = 1 ";
-  let param = [];
-  if (validateUtil.isVal(projectId)) {
-    sql = sql + "AND project_id = $1 ";
-    param.push(projectId);
+  // チームID
+  let teamId = params.teamId;
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  if (validateUtil.isVal(projectName)) {
-    sql = sql + "AND project_name LIKE $2 ";
-    param.push('%' + projectName + '%');
+  // チームの存在チェック
+  if (! await teamUtil.isTeamId(res, teamId)) {
+    return res.status(400).send({message : messageUtil.errMessage002("チーム")}); 
+  }
+  // チームの権限チェック
+  if (! await teamUtil.isTeamAuthority(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
   }
 
-  let projects = await db.query(sql, param);
+  // メンバー、管理者権限を持つプロジェクトの一覧を取得
+  let projects = await db.query(
+    `SELECT pj.team_id, pj.project_id, pj.project_name, pj."content"
+    FROM sw_m_project pj
+    INNER JOIN (
+      (SELECT project_id, user_id
+      FROM sw_m_project_member
+      WHERE user_id = $1
+      AND user_authority = true)
+      UNION
+      (SELECT project_id, user_id
+      FROM sw_m_project_member
+      WHERE user_id = $1
+      AND administrator_authority = true)
+      ) as mypj
+    ON pj.project_id = mypj.project_id
+    WHERE pj.team_id = $2`
+    , [userId, teamId]
+  );
   if (!projects.rows || projects.rows.length == 0) {
-    // プロジェクトが存在しない場合、エラー
-    return res.status(500).send( { message: 'プロジェクトが存在しません。' } );
+    // プロジェクトが存在しない場合、空のリストを返却
+    return res.send([]);
   }
   res.send(projects.rows);
 });
 
 /**
  * プロジェクト情報取得API.<br/>
- * GET(http://localhost:3000/api/v1/project)
+ * GET(http://localhost:3000/api/v1/projects)
  */
 router.get('/', async function(req, res, next) {
 
@@ -74,13 +88,17 @@ router.get('/', async function(req, res, next) {
   let params = req.query;
   // プロジェクトID
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
 
   // TODO: ユーザが見える範囲のみ返却
 
   // プロジェクト検索
   let projects = await db.query("SELECT * FROM sw_m_project WHERE project_id = $1 ", [projectId]);
-  validateUtil.queryValidate500(res, projects, "プロジェクト");
+  if (! validateUtil.isQueryResult(document, "ドキュメント")) {
+    return res.status(400).send({message : messageUtil.errMessage002("ドキュメント")});
+  }
 
   // プロジェクトメンバー検索
   // メンバー0でも返却
@@ -104,10 +122,10 @@ router.get('/', async function(req, res, next) {
 
 /**
  * プロジェクト登録API.<br/>
- * POST(http://localhost:3000/api/v1/project)
+ * POST(http://localhost:3000/api/v1/projects)
  */
 router.post('/', async function(req, res, next) {
-  console.log('POST:v1/project execution');
+  console.log('POST:v1/projects execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req, res);
@@ -116,15 +134,22 @@ router.post('/', async function(req, res, next) {
   let params = req.body;
   // プロジェクトID
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
   // プロジェクト名
   let projectName = params.projectName;
-  validateUtil.validate400(res, projectName, "プロジェクト名", "projectName");
+  if (! validateUtil.isParamVal(projectName, "プロジェクト名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクト名", "projectName")});
+  }
+
   // コンテンツ
   let content = params.content;
   // 機能名
   let functionName = params.functionName;
-  validateUtil.validate400(res, functionName, "機能名", "functionName");
+  if (! validateUtil.isParamVal(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
 
   // プロジェクトIDの利用可能チェック
   if (await projectUtil.isProjectId(projectId)) {
@@ -155,14 +180,16 @@ router.post('/', async function(req, res, next) {
 /**
  * プロジェクト削除API.<br/>
  * 論理削除。<br/>
- * DELETE(http://localhost:3000/api/v1/project)
+ * DELETE(http://localhost:3000/api/v1/projects)
  */
 router.delete('/', async function(req, res, next) {
-  console.log('DELETE:v1/project execution');
+  console.log('DELETE:v1/projects execution');
 
   // パラメータ取得
   let projectId = req.body.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
 
   // TODO: プロジェクトの存在チェック
   // プロジェクト削除
@@ -183,17 +210,19 @@ router.delete('/', async function(req, res, next) {
 
 /**
  * プロジェクト メンバー＆権限登録API.<br/>
- * POST(http://localhost:3000/api/v1/project/users)
+ * POST(http://localhost:3000/api/v1/projects/users)
  */
 router.post('/users', async function(req, res, next) {
-  console.log('POST:v1/project/users execution');
+  console.log('POST:v1/projects/users execution');
   // tokenからuserIdを取得
   let insertUserId = await tokenUtil.getUserId(req, res);
 
   // パラメータから登録情報を取得
   let params = req.body;
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
 
   // プロジェクトの存在チェック
   if (! await projectUtil.isProjectId(projectId)) {
@@ -202,17 +231,25 @@ router.post('/users', async function(req, res, next) {
 
   // 機能名
   let functionName = params.functionName;
-  validateUtil.validate400(res, functionName, "機能名", "functionName");
+  if (! validateUtil.isParamVal(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
   // ユーザ情報
   let users = params.users;
-  validateUtil.validate400(res, users, "ユーザ情報", "users");
+  if (! validateUtil.isParamVal(users, "ユーザ情報")) {
+    return res.status(400).send({message : messageUtil.errMessage001("ユーザ情報", "users")});
+  }
+
 
   let result = [];
   for (let i=0; i<users.length; i++) {
     let rowParam = users[i];
     // ユーザID
     let userId = rowParam.userId;
-    validateUtil.validate400(res, userId, "ユーザID", "userId");
+    if (! validateUtil.isParamVal(userId, "ユーザID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
+    }
+  
 
     // メンバーの存在チェック
    if (! await userUtil.isUserId(res, userId)) {
@@ -221,10 +258,15 @@ router.post('/users', async function(req, res, next) {
 
     // メンバー権限
     let userAuthority = rowParam.userAuthority;
-    validateUtil.validate400(res, userAuthority, "メンバー権限", "userAuthority");
+    if (! validateUtil.isParamVal(userAuthority, "メンバー権限")) {
+      return res.status(400).send({message : messageUtil.errMessage001("メンバー権限", "userAuthority")});
+    }
+  
     // 管理者権限
     let administratorAuthority = rowParam.administratorAuthority;
-    validateUtil.validate400(res, administratorAuthority, "管理者権限", "administratorAuthority");
+    if (! validateUtil.isParamVal(administratorAuthority, "管理者権限")) {
+      return res.status(400).send({message : messageUtil.errMessage001("管理者権限", "administratorAuthority")});
+    }
 
     // プロジェクトメンバーの存在チェック
     if (await projectUtil.isProjectMember(projectId, userId)) {

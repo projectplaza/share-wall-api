@@ -15,14 +15,12 @@ var router = express.Router();
 // DBアクセス
 const db = require('../../db');
 
-// tokenUtil
+// util
 const tokenUtil = require('../../app/util/main/tokenUtil.js');
-// userUtil
 const userUtil = require('../../app/util/main/userUtil.js');
-// teamUtil
 const teamUtil = require('../../app/util/main/teamUtil.js');
-// validateUtil
 const validateUtil = require('../../app/util/validateUtil.js');
+const messageUtil = require('../../app/util/messageUtil.js');
 
 /**
  * チームAPI.<br/>
@@ -38,10 +36,8 @@ router.get('/list', async function(req, res, next) {
   let params = req.query;
   // チームID
   let teamId = params.teamId;
-  // validateUtil.validate400(res, teamId, "チームID", "teamId");
   // チーム名
   let teamName = params.teamName;
-  // validateUtil.validate400(res, teamName, "チーム名", "teamName");
 
   // TODO: ユーザが見える範囲のチームのみ返却
 
@@ -78,18 +74,21 @@ router.get('/', async function(req, res, next) {
   let params = req.query;
   // チームID
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
 
   // TODO: ユーザが見える範囲のチームのみ返却
 
   // チーム検索
   let teams = await db.query("SELECT * FROM sw_m_team WHERE team_id = $1 ", [teamId]);
-  validateUtil.queryValidate500(res, teams, "チーム");
+  if (! validateUtil.isQueryResult(teams, "チーム")) {
+    return res.status(400).send({message : messageUtil.errMessage002("チーム")});
+  }
 
   // チームメンバー検索
   let members = await db.query("SELECT * FROM sw_m_team_member AS smtm INNER JOIN sw_m_user AS smu ON smtm.user_id = smu.user_id WHERE smtm.team_id = $1 ", [teamId]);
   // メンバー0でも返却
-  // validateUtil.queryValidate500(res, members, "チームメンバー");
 
   console.log(teams.rows[0])
   console.log(members.rows[0])
@@ -125,15 +124,22 @@ router.post('/', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // チーム名
   let teamName = params.teamName;
-  validateUtil.validate400(res, teamName, "チーム名", "teamName");
+  if (! validateUtil.isParamVal(teamName, "チーム名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チーム名", "teamName")});
+  }
+
   // コンテンツ
   let content = params.content;
   // 機能名
   let functionName = params.functionName;
-  validateUtil.validate400(res, functionName, "機能名", "functionName");
+  if (! validateUtil.isParamVal(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
 
   // チームIDの利用可能チェック
   if (await teamUtil.isTeamId(res, teamId)) {
@@ -193,7 +199,9 @@ router.delete('/', async function(req, res, next) {
 
   // パラメータ取得
   let teamId = req.body.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
 
   // TODO: チームの存在チェック
   // チーム削除
@@ -229,7 +237,9 @@ router.post('/users', async function(req, res, next) {
   // パラメータから登録情報を取得
   let params = req.body;
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
 
   // チームの存在チェック
   if (! await teamUtil.isTeamId(res, teamId)) {
@@ -238,17 +248,24 @@ router.post('/users', async function(req, res, next) {
 
   // 機能名
   let functionName = params.functionName;
-  validateUtil.validate400(res, functionName, "機能名", "functionName");
+  if (! validateUtil.isParamVal(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
   // ユーザ情報
   let users = params.users;
-  validateUtil.validate400(res, users, "ユーザ情報", "users");
+  if (! validateUtil.isParamVal(users, "ユーザ情報")) {
+    return res.status(400).send({message : messageUtil.errMessage001("ユーザ情報", "users")});
+  }
+
 
   let result = [];
   for (let i=0; i<users.length; i++) {
     let rowParam = users[i];
     // ユーザID
     let userId = rowParam.userId;
-    validateUtil.validate400(res, userId, "ユーザID", "userId");
+    if (! validateUtil.isParamVal(userId, "ユーザID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
+    }
 
     // メンバーの存在チェック
    if (! await userUtil.isUserId(res, userId)) {
@@ -257,13 +274,17 @@ router.post('/users', async function(req, res, next) {
 
     // メンバー権限
     let userAuthority = rowParam.userAuthority;
-    validateUtil.validate400(res, userAuthority, "メンバー権限", "userAuthority");
+    if (! validateUtil.isParamVal(userAuthority, "メンバー権限")) {
+      return res.status(400).send({message : messageUtil.errMessage001("メンバー権限", "userAuthority")});
+    }
     // 管理者権限
     let administratorAuthority = rowParam.administratorAuthority;
-    validateUtil.validate400(res, administratorAuthority, "管理者権限", "administratorAuthority");
+    if (! validateUtil.isParamVal(administratorAuthority, "管理者権限")) {
+      return res.status(400).send({message : messageUtil.errMessage001("管理者権限", "administratorAuthority")});
+    }
 
     // チームメンバーの存在チェック
-    if (await isTeamMember(res, teamId, userId)) {
+    if (await isTeamMember(teamId, userId)) {
       return res.status(500).send({message : "登録済みのデータです。(teamId:" + teamId + ", userId:" + userId + ")"});
     }
 
@@ -276,12 +297,11 @@ router.post('/users', async function(req, res, next) {
 
 /**
  * チームメンバの存在判定
- * @param {*} res
  * @param {*} teamId チームID
  * @param {*} userId ユーザID
  * @return true:存在する/false:存在しない
  */
-async function isTeamMember(res, teamId, userId) {
+async function isTeamMember(teamId, userId) {
   console.log('team - isTeamMember()');
 
   // チームメンバー検索

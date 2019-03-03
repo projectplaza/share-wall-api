@@ -33,6 +33,7 @@ const projectUtil = require('../../app/util/main/projectUtil.js');
 const documentUtil = require('../../app/util/app/documentUtil.js');
 const generatUtil = require('../../app/util/generatUtil.js');
 const validateUtil = require('../../app/util/validateUtil.js');
+const messageUtil = require('../../app/util/messageUtil.js');
 
 /**
  * フォルダ一覧取得API
@@ -49,10 +50,14 @@ router.get('/folder/list', async function(req, res, next) {
   let params = req.query;
   // チームID
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // プロジェクトID
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
   // プロジェクト所属チェック
   if (! await projectUtil.isProjectMember(res, projectId, userId)) {
     return res.status(500).send( { message: 'プロジェクトに所属していません。' } );
@@ -104,17 +109,23 @@ router.get('/document/list', async function(req, res, next) {
   let params = req.query;
   // チームID
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // プロジェクトID
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
   // プロジェクト所属チェック
   if (! await projectUtil.isProjectMember(res, projectId, userId)) {
     return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
   }
   // フォルダID
   let folderId = params.folderId;
-  validateUtil.validate400(res, folderId, "フォルダID", "folderId");
+  if (! validateUtil.isParamVal(folderId, "フォルダID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
+  }
 
   // ドキュメントリスト取得SQL
   let sql = `
@@ -188,7 +199,9 @@ router.get('/document', async function(req, res, next) {
   let params = req.query;
   // ドキュメントID
   let documentId = params.documentId;
-  validateUtil.validate400(res, documentId, "ドキュメントID", "documentId");
+  if (! validateUtil.isParamVal(documentId, "ドキュメントID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("ドキュメントID", "documentId")});
+  }
 
   // SQL
   let sql = `
@@ -216,7 +229,9 @@ router.get('/document', async function(req, res, next) {
 
   // ドキュメント検索
   let document = await db.query(sql, [documentId]);
-  validateUtil.queryValidate500(res, document, "ドキュメント");
+  if (! validateUtil.isQueryResult(document, "ドキュメント")) {
+    return res.status(400).send({message : messageUtil.errMessage002("ドキュメント")});
+  }
 
   // 検索結果を返却
   res.send({
@@ -244,14 +259,18 @@ router.post('/folder', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // チームIDのマスタチェック
   if (! await teamUtil.isTeamId(res, teamId)) {
     return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
   }
   // プロジェクトID
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
   // プロジェクトIDのマスタチェック
   if (! await projectUtil.isProjectId(res, projectId)) {
     return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
@@ -262,10 +281,14 @@ router.post('/folder', async function(req, res, next) {
   }
   // フォルダ名
   let folderName = params.folderName;
-  validateUtil.validate400(res, folderName, "フォルダ名", "folderName");
+  if (! validateUtil.isParamVal(folderName, "フォルダ名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("フォルダ名", "folderName")});
+  }
   // 機能名
   let functionName = params.functionName;
-  validateUtil.validate400(res, functionName, "機能名", "functionName");
+  if (! validateUtil.isParamVal(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
 
   // フォルダID生成
   let folderId = await generatUtil.getDesignDocumentFolderId();
@@ -318,14 +341,18 @@ router.post('/document', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // チームIDのマスタチェック
   if (! await teamUtil.isTeamId(res, teamId)) {
     return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
   }
   // プロジェクトID
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
   // プロジェクトIDのマスタチェック
   if (! await projectUtil.isProjectId(res, projectId)) {
     return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
@@ -336,14 +363,19 @@ router.post('/document', async function(req, res, next) {
   }
   // フォルダID
   let folderId = params.folderId;
-  validateUtil.validate400(res, folderId, "フォルダID", "folderId");
+  if (! validateUtil.isParamVal(folderId, "フォルダID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
+  }
   // フォルダIDのマスタチェック
   if (! await documentUtil.isFolderId(res, folderId)) {
     return res.status(500).send({message : "フォルダIDが存在しません。(folderId:" + folderId + ")"});
   }
   // ドキュメント名
   let documentName = params.documentName;
-  validateUtil.validate400(res, documentName, "ドキュメント名", "documentName");
+  if (! validateUtil.isParamVal(documentName, "ドキュメント名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("ドキュメント名", "documentName")});
+  }
+
   // コンテンツ
   let content = params.content;
   if (!content) {
@@ -352,7 +384,9 @@ router.post('/document', async function(req, res, next) {
   }
   // 機能名
   let functionName = params.functionName;
-  validateUtil.validate400(res, functionName, "機能名", "functionName");
+  if (! validateUtil.isParamVal(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
 
   // ドキュメントID生成
   let documentId = await generatUtil.getDesignDocumentDocumentId();
@@ -429,14 +463,18 @@ router.delete('/folder', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // チームIDのマスタチェック
   if (! await teamUtil.isTeamId(res, teamId)) {
     return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
   }
   // プロジェクトID
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
   // プロジェクトIDのマスタチェック
   if (! await projectUtil.isProjectId(res, projectId)) {
     return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
@@ -447,7 +485,9 @@ router.delete('/folder', async function(req, res, next) {
   }
   // フォルダID
   let folderId = params.folderId;
-  validateUtil.validate400(res, folderId, "フォルダID", "folderId");
+  if (! validateUtil.isParamVal(folderId, "フォルダID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
+  }
   // フォルダIDのマスタチェック
   if (! await documentUtil.isFolderId(res, folderId)) {
     return res.status(500).send({message : "フォルダIDが存在しません。(folderId:" + folderId + ")"});
@@ -510,14 +550,18 @@ router.delete('/document', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // チームIDのマスタチェック
   if (! await teamUtil.isTeamId(res, teamId)) {
     return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
   }
   // プロジェクトID
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
   // プロジェクトIDのマスタチェック
   if (! await projectUtil.isProjectId(res, projectId)) {
     return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
@@ -528,7 +572,9 @@ router.delete('/document', async function(req, res, next) {
   }
   // ドキュメントID
   let documentId = params.documentId;
-  validateUtil.validate400(res, documentId, "ドキュメントID", "documentId");
+  if (! validateUtil.isParamVal(documentId, "ドキュメントID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("ドキュメントID", "documentId")});
+  }
   // ドキュメントIDのマスタチェック
   if (! await documentUtil.isDocumentId(res, documentId)) {
     return res.status(500).send({message : "ドキュメントIDが存在しません。(documentId:" + documentId + ")"});
@@ -593,14 +639,18 @@ router.put('/folder', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // チームIDのマスタチェック
   if (! await teamUtil.isTeamId(res, teamId)) {
     return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
   }
   // プロジェクトID
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
   // プロジェクトIDのマスタチェック
   if (! await projectUtil.isProjectId(res, projectId)) {
     return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
@@ -611,7 +661,9 @@ router.put('/folder', async function(req, res, next) {
   }
   // フォルダID
   let folderId = params.folderId;
-  validateUtil.validate400(res, folderId, "フォルダID", "folderId");
+  if (! validateUtil.isParamVal(folderId, "フォルダID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
+  }
   // プロジェクトIDのマスタチェック
   if (! await documentUtil.isFolderId(res, folderId)) {
     return res.status(500).send({message : "フォルダIDが存在しません。(folderId:" + folderId + ")"});
@@ -622,7 +674,9 @@ router.put('/folder', async function(req, res, next) {
   let orderNo = params.order;
   // 機能名
   let functionName = params.functionName;
-  validateUtil.validate400(res, functionName, "機能名", "functionName");
+  if (! validateUtil.isParamVal(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
 
   // フォルダ検索
   let folder = await db.query(
@@ -701,14 +755,18 @@ router.put('/document', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  validateUtil.validate400(res, teamId, "チームID", "teamId");
+  if (! validateUtil.isParamVal(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // チームIDのマスタチェック
   if (! await teamUtil.isTeamId(res, teamId)) {
     return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
   }
   // プロジェクトID
   let projectId = params.projectId;
-  validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
   // プロジェクトIDのマスタチェック
   if (! await projectUtil.isProjectId(res, projectId)) {
     return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
@@ -719,7 +777,9 @@ router.put('/document', async function(req, res, next) {
   }
   // ドキュメントID
   let documentId = params.documentId;
-  validateUtil.validate400(res, documentId, "ドキュメントID", "documentId");
+  if (! validateUtil.isParamVal(documentId, "ドキュメントID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("ドキュメントID", "documentId")});
+  }
   // ドキュメントIDのマスタチェック
   if (! await documentUtil.isDocumentId(res, documentId)) {
     return res.status(500).send({message : "ドキュメントIDが存在しません。(documentId:" + documentId + ")"});
@@ -732,7 +792,9 @@ router.put('/document', async function(req, res, next) {
   let orderNo = params.order;
   // 機能名
   let functionName = params.functionName;
-  validateUtil.validate400(res, functionName, "機能名", "functionName");
+  if (! validateUtil.isParamVal(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
 
   // ドキュメント情報を取得
   let documentInfo = await db.query(
