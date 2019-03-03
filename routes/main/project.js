@@ -152,7 +152,7 @@ router.post('/', async function(req, res, next) {
   }
 
   // プロジェクトIDの利用可能チェック
-  if (await projectUtil.isProjectId(projectId)) {
+  if (await projectUtil.isProjectId(res, projectId)) {
     return res.status(500).send({message : "登録済みのプロジェクトIDです。(projectId:" + projectId + ")"});
   }
 
@@ -225,7 +225,7 @@ router.post('/users', async function(req, res, next) {
   }
 
   // プロジェクトの存在チェック
-  if (! await projectUtil.isProjectId(projectId)) {
+  if (! await projectUtil.isProjectId(res, projectId)) {
     return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
   }
 
