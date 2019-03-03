@@ -52,18 +52,18 @@ router.get('/list', async function(req, res, next) {
   // メンバー、管理者権限を持つプロジェクトの一覧を取得
   let projects = await db.query(
     `SELECT pj.team_id, pj.project_id, pj.project_name, pj."content"
-    FROM sw_m_project pj
-    INNER JOIN (
+     FROM sw_m_project pj
+     INNER JOIN (
       (SELECT project_id, user_id
-      FROM sw_m_project_member
-      WHERE user_id = $1
-      AND user_authority = true)
+       FROM sw_m_project_member
+       WHERE user_id = $1
+       AND user_authority = true)
       UNION
       (SELECT project_id, user_id
-      FROM sw_m_project_member
-      WHERE user_id = $1
-      AND administrator_authority = true)
-      ) as mypj
+       FROM sw_m_project_member
+       WHERE user_id = $1
+       AND administrator_authority = true)
+      ) AS mypj
     ON pj.project_id = mypj.project_id
     WHERE pj.team_id = $2`
     , [userId, teamId]
@@ -72,7 +72,16 @@ router.get('/list', async function(req, res, next) {
     // プロジェクトが存在しない場合、空のリストを返却
     return res.send([]);
   }
-  res.send(projects.rows);
+
+  let resProjects = [];
+  projects.rows.forEach( function(row) {
+    resProjects.push({
+      teamId : row.team_id,
+      projectId : row.project_id,
+      projectName : row.project_name,
+      content : row.content})
+  });
+  res.send(resProjects);
 });
 
 /**

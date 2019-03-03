@@ -1,13 +1,13 @@
 /**
  * チームAPI.<br/>
  * 
- * GET(http://localhost:3000/api/v1/team/list)
- * GET(http://localhost:3000/api/v1/team)
- * POST(http://localhost:3000/api/v1/team)
- * PUT(http://localhost:3000/api/v1/team)
- * DELETE(http://localhost:3000/api/v1/team)
- * GET(http://localhost:3000/api/v1/team/users)
- * POST(http://localhost:3000/api/v1/team/users)
+ * GET(http://localhost:3000/api/v1/teams/list)
+ * GET(http://localhost:3000/api/v1/teams)
+ * POST(http://localhost:3000/api/v1/teams)
+ * PUT(http://localhost:3000/api/v1/teams)
+ * DELETE(http://localhost:3000/api/v1/teams)
+ * GET(http://localhost:3000/api/v1/teams/users)
+ * POST(http://localhost:3000/api/v1/teams/users)
  */
 var express = require('express');
 var router = express.Router();
@@ -24,46 +24,50 @@ const messageUtil = require('../../app/util/messageUtil.js');
 
 /**
  * チームAPI.<br/>
- * GET(http://localhost:3000/api/v1/team/list)
+ * GET(http://localhost:3000/api/v1/teams/list)
  */
 router.get('/list', async function(req, res, next) {
-  console.log('GET:v1/team/ execution');
+  console.log('GET:v1/teams/ execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req, res);
 
-  // パラメータ取得
-  let params = req.query;
-  // チームID
-  let teamId = params.teamId;
-  // チーム名
-  let teamName = params.teamName;
-
-  // TODO: ユーザが見える範囲のチームのみ返却
-
-  // SQL生成
-  let sql = "SELECT * FROM sw_m_team WHERE 1 = 1 ";
-  let param = [];
-  if (validateUtil.isVal(teamId)) {
-    sql = sql + "AND team_id = $1 ";
-    param.push(teamId);
-  }
-  if (validateUtil.isVal(teamName)) {
-    sql = sql + "AND team_name LIKE $2 ";
-    param.push('%' + teamName + '%');
-  }
-
-  let teams = await db.query(sql, param);
+  // メンバー、管理者権限を持つチームの一覧を取得
+  let teams = await db.query(
+    `SELECT tm.team_id, tm.team_name, tm."content"
+     FROM sw_m_team tm
+     INNER JOIN (
+      (SELECT *
+       FROM sw_m_team_member
+       WHERE user_id = $1
+       AND user_authority = true)
+      UNION
+      (SELECT *
+       FROM sw_m_team_member
+       WHERE user_id = $1
+       AND administrator_authority = true)
+      ) AS mytm
+     ON tm.team_id = mytm.team_id`
+    , [userId]
+  );
   if (!teams.rows || teams.rows.length == 0) {
-    // チームが存在しない場合、エラー
-    return res.status(500).send( { message: 'チームが存在しません。' } );
+    // チームが存在しない場合、空のリストを返却
+    return res.send([]);
   }
-  res.send(teams.rows);
+
+  let resTeams = [];
+  teams.rows.forEach( function(row) {
+    resTeams.push({
+      teamId : row.team_id,
+      teamName : row.team_name,
+      content : row.content})
+  });
+  res.send(resTeams);
 });
 
 /**
  * チーム情報取得API.<br/>
- * GET(http://localhost:3000/api/v1/team)
+ * GET(http://localhost:3000/api/v1/teams)
  */
 router.get('/', async function(req, res, next) {
 
@@ -112,10 +116,10 @@ router.get('/', async function(req, res, next) {
 
 /**
  * チーム登録API.<br/>
- * POST(http://localhost:3000/api/v1/team)
+ * POST(http://localhost:3000/api/v1/teams)
  */
 router.post('/', async function(req, res, next) {
-  console.log('POST:v1/team execution');
+  console.log('POST:v1/teams execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req, res);
@@ -169,7 +173,7 @@ router.post('/', async function(req, res, next) {
 
 /**
  * チーム更新API.<br/>
- * PUT(http://localhost:3000/api/v1/team)
+ * PUT(http://localhost:3000/api/v1/teams)
  */
 router.put('/', function(req, res, next) {
   console.log(req)
@@ -180,7 +184,7 @@ router.put('/', function(req, res, next) {
 
 /**
  * チーム情報を一部更新API（※いらない？とりあえず未実装のまま放置。）.<br/>
- * PUT(http://localhost:3000/api/v1/team)
+ * PUT(http://localhost:3000/api/v1/teams)
  */
 router.put('/', function(req, res, next) {
   console.log(req)
@@ -192,10 +196,10 @@ router.put('/', function(req, res, next) {
 /**
  * チーム削除API.<br/>
  * 論理削除。<br/>
- * DELETE(http://localhost:3000/api/v1/team)
+ * DELETE(http://localhost:3000/api/v1/teams)
  */
 router.delete('/', async function(req, res, next) {
-  console.log('DELETE:v1/team execution');
+  console.log('DELETE:v1/teams execution');
 
   // パラメータ取得
   let teamId = req.body.teamId;
@@ -222,15 +226,15 @@ router.delete('/', async function(req, res, next) {
 
 /**
  * チーム メンバー＆権限取得API.<br/>
- * GET(http://localhost:3000/api/v1/team/users)
+ * GET(http://localhost:3000/api/v1/teams/users)
  */
 
 /**
  * チーム メンバー＆権限登録API.<br/>
- * POST(http://localhost:3000/api/v1/team/users)
+ * POST(http://localhost:3000/api/v1/teams/users)
  */
 router.post('/users', async function(req, res, next) {
-  console.log('POST:v1/team/users execution');
+  console.log('POST:v1/teams/users execution');
   // tokenからuserIdを取得
   let insertUserId = await tokenUtil.getUserId(req, res);
 
