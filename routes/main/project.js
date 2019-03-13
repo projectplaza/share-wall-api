@@ -101,12 +101,10 @@ router.get('/', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
 
-  // TODO: ユーザが見える範囲のみ返却
-
   // プロジェクト検索
   let projects = await db.query("SELECT * FROM sw_m_project WHERE project_id = $1 ", [projectId]);
-  if (! validateUtil.isQueryResult(document, "ドキュメント")) {
-    return res.status(400).send({message : messageUtil.errMessage002("ドキュメント")});
+  if (! validateUtil.isQueryResult(projects, "プロジェクト")) {
+    return res.status(400).send({message : messageUtil.errMessage002("プロジェクト")});
   }
 
   // プロジェクトメンバー検索
@@ -141,6 +139,11 @@ router.post('/', async function(req, res, next) {
 
   // パラメータから登録情報を取得
   let params = req.body;
+  // チームID
+  let teamId = params.teamId;
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
@@ -170,11 +173,23 @@ router.post('/', async function(req, res, next) {
 
   // プロジェクト登録
   let newProjects = await db.query(
-    'INSERT INTO sw_m_project (project_id, project_name, content, create_user, create_function, create_datetime, update_user, update_function, update_datetime) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)'
-    , [projectId, projectName, content, userId, functionName, insertDate, userId, functionName, insertDate]);
+    `INSERT INTO sw_m_project (
+      team_id
+      , project_id
+      , project_name
+      , content
+      , create_user
+      , create_function
+      , create_datetime
+      , update_user
+      , update_function
+      , update_datetime) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+    , [teamId, projectId, projectName, content, userId, functionName, insertDate, userId, functionName, insertDate]);
 
   // 登録情報を返却
-  res.send({projectId : projectId,
+  res.send({teamId : teamId,
+            projectId : projectId,
             projectName : projectName,
             content : content,
             createUser : userId,
@@ -199,8 +214,13 @@ router.delete('/', async function(req, res, next) {
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
+  // プロジェクトIDのマスタ存在チェック
+  if (! await projectUtil.isProjectId(res, projectId)) {
+    return res.status(400).send({message : messageUtil.errMessage002("プロジェクト")});
+  }
+  // プロジェクトの権限チェック
+  // TODO: プロジェクトの権限チェック
 
-  // TODO: プロジェクトの存在チェック
   // プロジェクト削除
   let projectResult = await db.query(
     'DELETE FROM sw_m_project WHERE project_id = $1'

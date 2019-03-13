@@ -49,7 +49,10 @@ module.exports = {
 
     // マスタ検索
     let result = await db.query(
-      'SELECT count(project_id) FROM sw_m_project_member WHERE project_id = $1 AND user_id =$2'
+      `SELECT count(project_id) 
+       FROM sw_m_project_member 
+       WHERE project_id = $1 
+       AND user_id =$2`
       , [projectId, memberId]
     );
     if (result != null && result.rows != null && result.rows[0].count > 0) {
