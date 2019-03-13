@@ -50,12 +50,12 @@ router.get('/folder/list', async function(req, res, next) {
   let params = req.query;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // プロジェクトID
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクト所属チェック
@@ -109,12 +109,12 @@ router.get('/document/list', async function(req, res, next) {
   let params = req.query;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // プロジェクトID
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクト所属チェック
@@ -123,7 +123,7 @@ router.get('/document/list', async function(req, res, next) {
   }
   // フォルダID
   let folderId = params.folderId;
-  if (! validateUtil.isParamVal(folderId, "フォルダID")) {
+  if (! validateUtil.isEmptyText(folderId, "フォルダID")) {
     return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
   }
 
@@ -199,7 +199,7 @@ router.get('/document', async function(req, res, next) {
   let params = req.query;
   // ドキュメントID
   let documentId = params.documentId;
-  if (! validateUtil.isParamVal(documentId, "ドキュメントID")) {
+  if (! validateUtil.isEmptyText(documentId, "ドキュメントID")) {
     return res.status(400).send({message : messageUtil.errMessage001("ドキュメントID", "documentId")});
   }
 
@@ -259,7 +259,7 @@ router.post('/folder', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // チームIDのマスタチェック
@@ -268,7 +268,7 @@ router.post('/folder', async function(req, res, next) {
   }
   // プロジェクトID
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクトIDのマスタチェック
@@ -281,12 +281,12 @@ router.post('/folder', async function(req, res, next) {
   }
   // フォルダ名
   let folderName = params.folderName;
-  if (! validateUtil.isParamVal(folderName, "フォルダ名")) {
+  if (! validateUtil.isEmptyText(folderName, "フォルダ名")) {
     return res.status(400).send({message : messageUtil.errMessage001("フォルダ名", "folderName")});
   }
   // 機能名
   let functionName = params.functionName;
-  if (! validateUtil.isParamVal(functionName, "機能名")) {
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
 
@@ -341,7 +341,7 @@ router.post('/document', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // チームIDのマスタチェック
@@ -350,7 +350,7 @@ router.post('/document', async function(req, res, next) {
   }
   // プロジェクトID
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクトIDのマスタチェック
@@ -363,7 +363,7 @@ router.post('/document', async function(req, res, next) {
   }
   // フォルダID
   let folderId = params.folderId;
-  if (! validateUtil.isParamVal(folderId, "フォルダID")) {
+  if (! validateUtil.isEmptyText(folderId, "フォルダID")) {
     return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
   }
   // フォルダIDのマスタチェック
@@ -372,7 +372,7 @@ router.post('/document', async function(req, res, next) {
   }
   // ドキュメント名
   let documentName = params.documentName;
-  if (! validateUtil.isParamVal(documentName, "ドキュメント名")) {
+  if (! validateUtil.isEmptyText(documentName, "ドキュメント名")) {
     return res.status(400).send({message : messageUtil.errMessage001("ドキュメント名", "documentName")});
   }
 
@@ -384,7 +384,7 @@ router.post('/document', async function(req, res, next) {
   }
   // 機能名
   let functionName = params.functionName;
-  if (! validateUtil.isParamVal(functionName, "機能名")) {
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
 
@@ -463,7 +463,7 @@ router.delete('/folder', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // チームIDのマスタチェック
@@ -472,7 +472,7 @@ router.delete('/folder', async function(req, res, next) {
   }
   // プロジェクトID
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクトIDのマスタチェック
@@ -485,7 +485,7 @@ router.delete('/folder', async function(req, res, next) {
   }
   // フォルダID
   let folderId = params.folderId;
-  if (! validateUtil.isParamVal(folderId, "フォルダID")) {
+  if (! validateUtil.isEmptyText(folderId, "フォルダID")) {
     return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
   }
   // フォルダIDのマスタチェック
@@ -550,7 +550,7 @@ router.delete('/document', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // チームIDのマスタチェック
@@ -559,7 +559,7 @@ router.delete('/document', async function(req, res, next) {
   }
   // プロジェクトID
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクトIDのマスタチェック
@@ -572,7 +572,7 @@ router.delete('/document', async function(req, res, next) {
   }
   // ドキュメントID
   let documentId = params.documentId;
-  if (! validateUtil.isParamVal(documentId, "ドキュメントID")) {
+  if (! validateUtil.isEmptyText(documentId, "ドキュメントID")) {
     return res.status(400).send({message : messageUtil.errMessage001("ドキュメントID", "documentId")});
   }
   // ドキュメントIDのマスタチェック
@@ -639,7 +639,7 @@ router.put('/folder', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // チームIDのマスタチェック
@@ -648,7 +648,7 @@ router.put('/folder', async function(req, res, next) {
   }
   // プロジェクトID
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクトIDのマスタチェック
@@ -661,7 +661,7 @@ router.put('/folder', async function(req, res, next) {
   }
   // フォルダID
   let folderId = params.folderId;
-  if (! validateUtil.isParamVal(folderId, "フォルダID")) {
+  if (! validateUtil.isEmptyText(folderId, "フォルダID")) {
     return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
   }
   // プロジェクトIDのマスタチェック
@@ -674,7 +674,7 @@ router.put('/folder', async function(req, res, next) {
   let orderNo = params.order;
   // 機能名
   let functionName = params.functionName;
-  if (! validateUtil.isParamVal(functionName, "機能名")) {
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
 
@@ -693,12 +693,12 @@ router.put('/folder', async function(req, res, next) {
 
   // 更新用フォルダ名
   let updateFolderName = folder.rows[0].folder_name;
-  if (validateUtil.isVal(folderName)) {
+  if (validateUtil.isEmptyText(folderName)) {
     updateFolderName = folderName;
   }
   // 更新用順序
   let updateOrderNo = folder.rows[0].order_no;
-  if (validateUtil.isVal(orderNo)) {
+  if (validateUtil.isEmptyText(orderNo)) {
     updateOrderNo = orderNo;
   }
   // 更新日時
@@ -755,7 +755,7 @@ router.put('/document', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // チームIDのマスタチェック
@@ -764,7 +764,7 @@ router.put('/document', async function(req, res, next) {
   }
   // プロジェクトID
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクトIDのマスタチェック
@@ -777,7 +777,7 @@ router.put('/document', async function(req, res, next) {
   }
   // ドキュメントID
   let documentId = params.documentId;
-  if (! validateUtil.isParamVal(documentId, "ドキュメントID")) {
+  if (! validateUtil.isEmptyText(documentId, "ドキュメントID")) {
     return res.status(400).send({message : messageUtil.errMessage001("ドキュメントID", "documentId")});
   }
   // ドキュメントIDのマスタチェック
@@ -792,7 +792,7 @@ router.put('/document', async function(req, res, next) {
   let orderNo = params.order;
   // 機能名
   let functionName = params.functionName;
-  if (! validateUtil.isParamVal(functionName, "機能名")) {
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
 
@@ -811,7 +811,7 @@ router.put('/document', async function(req, res, next) {
 
   // 更新用順序
   let updateOrderNo = documentInfo.rows[0].order_no;
-  if (validateUtil.isVal(orderNo)) {
+  if (validateUtil.isEmptyText(orderNo)) {
     updateOrderNo = orderNo;
   }
   // 更新日時
@@ -858,12 +858,12 @@ router.put('/document', async function(req, res, next) {
 
   // 更新用ドキュメント名
   let updateDocumentName = contentInfo.rows[0].document_name;
-  if (validateUtil.isVal(documentName)) {
+  if (validateUtil.isEmptyText(documentName)) {
     updateDocumentName = documentName;
   }
   // 更新用コンテンツ
   let updateContent = contentInfo.rows[0].content;
-  if (validateUtil.isVal(content)) {
+  if (validateUtil.isEmptyText(content)) {
     updateContent = content;
   }
   // 更新用バージョン

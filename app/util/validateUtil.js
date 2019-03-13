@@ -1,14 +1,13 @@
 module.exports = {
 
   /**
-   * 引数の値のundefined,空文字チェックを行い、
-   * 400番のエラーを出力します。
-   * @param {*} val 検証する値
-   * @param {*} logicalName 値の論理名
-   * @return true:値あり/false:値なし
+   * 引数の文字列に対してundefined,空文字チェックを行う。
+   * @param {*} val 検証する文字列
+   * @param {*} logicalName 文字列の論理名
+   * @return true:文字列あり/false:文字列なし（undefinedまたは空文字）
    */
-  isParamVal: function(val, logicalName) {
-    console.log('validateUtil - isParamVal(' + logicalName + ':' + val + ')');
+  isEmptyText: function(val, logicalName) {
+    console.log('validateUtil - isEmptyText(' + logicalName + ':' + val + ')');
     // 値の検証
     if (val == undefined || val == "") {
       return false;
@@ -17,15 +16,29 @@ module.exports = {
   },
 
   /**
-   * 引数の値のundefined,空文字判定を行う。
-   * @param {*} res 
-   * @param {*} val 検証する値
-   * @returns true:値あり/false:undefinedまたは空文字
+   * 引数の文字列に対してundefined,空文字判定を行う。
+   * @param {*} val 検証する文字列
+   * @returns true:文字列あり/false:文字列なし（undefinedまたは空文字）
    */
-  isVal: function(val) {
-    console.log('validateUtil - isVal()');
+  isEmptyText: function(val) {
+    console.log('validateUtil - isEmptyText('+ val +')');
     // 値の検証
     if (val == undefined || val == "") {
+      return false;
+    }
+    return true;
+  },
+
+  /**
+   * 引数のBooleanに対してundefinedチェックを行う。
+   * @param {*} val 検証するBoolean
+   * @param {*} logicalName Booleanの論理名
+   * @return true:Bool値あり/false:Bool値なし（undefined）
+   */
+  isEmptyBool: function(val, logicalName) {
+    console.log('validateUtil - isEmptyBool(' + logicalName + ':' + val + ')');
+    // 値の検証
+    if (val == undefined) {
       return false;
     }
     return true;

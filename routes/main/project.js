@@ -37,7 +37,7 @@ router.get('/list', async function(req, res, next) {
   let params = req.query;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // チームの存在チェック
@@ -97,7 +97,7 @@ router.get('/', async function(req, res, next) {
   let params = req.query;
   // プロジェクトID
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
 
@@ -143,12 +143,12 @@ router.post('/', async function(req, res, next) {
   let params = req.body;
   // プロジェクトID
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクト名
   let projectName = params.projectName;
-  if (! validateUtil.isParamVal(projectName, "プロジェクト名")) {
+  if (! validateUtil.isEmptyText(projectName, "プロジェクト名")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクト名", "projectName")});
   }
 
@@ -156,7 +156,7 @@ router.post('/', async function(req, res, next) {
   let content = params.content;
   // 機能名
   let functionName = params.functionName;
-  if (! validateUtil.isParamVal(functionName, "機能名")) {
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
 
@@ -196,7 +196,7 @@ router.delete('/', async function(req, res, next) {
 
   // パラメータ取得
   let projectId = req.body.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
 
@@ -229,7 +229,7 @@ router.post('/users', async function(req, res, next) {
   // パラメータから登録情報を取得
   let params = req.body;
   let projectId = params.projectId;
-  if (! validateUtil.isParamVal(projectId, "プロジェクトID")) {
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
 
@@ -240,12 +240,12 @@ router.post('/users', async function(req, res, next) {
 
   // 機能名
   let functionName = params.functionName;
-  if (! validateUtil.isParamVal(functionName, "機能名")) {
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
   // ユーザ情報
   let users = params.users;
-  if (! validateUtil.isParamVal(users, "ユーザ情報")) {
+  if (! validateUtil.isEmptyText(users, "ユーザ情報")) {
     return res.status(400).send({message : messageUtil.errMessage001("ユーザ情報", "users")});
   }
 
@@ -255,7 +255,7 @@ router.post('/users', async function(req, res, next) {
     let rowParam = users[i];
     // ユーザID
     let userId = rowParam.userId;
-    if (! validateUtil.isParamVal(userId, "ユーザID")) {
+    if (! validateUtil.isEmptyText(userId, "ユーザID")) {
       return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
     }
   
@@ -267,13 +267,13 @@ router.post('/users', async function(req, res, next) {
 
     // メンバー権限
     let userAuthority = rowParam.userAuthority;
-    if (! validateUtil.isParamVal(userAuthority, "メンバー権限")) {
+    if (! validateUtil.isEmptyBool(userAuthority, "メンバー権限")) {
       return res.status(400).send({message : messageUtil.errMessage001("メンバー権限", "userAuthority")});
     }
   
     // 管理者権限
     let administratorAuthority = rowParam.administratorAuthority;
-    if (! validateUtil.isParamVal(administratorAuthority, "管理者権限")) {
+    if (! validateUtil.isEmptyBool(administratorAuthority, "管理者権限")) {
       return res.status(400).send({message : messageUtil.errMessage001("管理者権限", "administratorAuthority")});
     }
 

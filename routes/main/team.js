@@ -1,12 +1,18 @@
 /**
  * チームAPI.<br/>
  * 
+ * チーム一覧取得API
  * GET(http://localhost:3000/api/v1/teams/list)
+ * チーム取得API
  * GET(http://localhost:3000/api/v1/teams)
+ * チーム登録API
  * POST(http://localhost:3000/api/v1/teams)
+ * チーム更新API
  * PUT(http://localhost:3000/api/v1/teams)
+ * チーム削除API
  * DELETE(http://localhost:3000/api/v1/teams)
  * GET(http://localhost:3000/api/v1/teams/users)
+ * チームメンバー登録API
  * POST(http://localhost:3000/api/v1/teams/users)
  */
 var express = require('express');
@@ -23,7 +29,7 @@ const validateUtil = require('../../app/util/validateUtil.js');
 const messageUtil = require('../../app/util/messageUtil.js');
 
 /**
- * チームAPI.<br/>
+ * チーム一覧取得API.<br/>
  * GET(http://localhost:3000/api/v1/teams/list)
  */
 router.get('/list', async function(req, res, next) {
@@ -66,7 +72,7 @@ router.get('/list', async function(req, res, next) {
 });
 
 /**
- * チーム情報取得API.<br/>
+ * チーム取得API.<br/>
  * GET(http://localhost:3000/api/v1/teams)
  */
 router.get('/', async function(req, res, next) {
@@ -78,25 +84,44 @@ router.get('/', async function(req, res, next) {
   let params = req.query;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
 
-  // TODO: ユーザが見える範囲のチームのみ返却
-
   // チーム検索
-  let teams = await db.query("SELECT * FROM sw_m_team WHERE team_id = $1 ", [teamId]);
+  let teams = await db.query(
+    `SELECT tm.team_id, tm.team_name, tm."content"
+     FROM sw_m_team tm
+     INNER JOIN (
+      (SELECT *
+       FROM sw_m_team_member
+       WHERE user_id = $1
+       AND user_authority = true)
+      UNION
+      (SELECT *
+       FROM sw_m_team_member
+       WHERE user_id = $1
+       AND administrator_authority = true)
+    ) AS mytm
+    ON tm.team_id = mytm.team_id
+    WHERE tm.team_id = $2`
+    , [userId, teamId]
+  );
   if (! validateUtil.isQueryResult(teams, "チーム")) {
+    // 検索結果が存在しない場合、エラー
     return res.status(400).send({message : messageUtil.errMessage002("チーム")});
   }
 
   // チームメンバー検索
-  let members = await db.query("SELECT * FROM sw_m_team_member AS smtm INNER JOIN sw_m_user AS smu ON smtm.user_id = smu.user_id WHERE smtm.team_id = $1 ", [teamId]);
-  // メンバー0でも返却
-
-  console.log(teams.rows[0])
-  console.log(members.rows[0])
-
+  let members = await db.query(
+    `SELECT * 
+     FROM sw_m_team_member AS smtm 
+     INNER JOIN sw_m_user AS smu 
+     ON smtm.user_id = smu.user_id 
+     WHERE smtm.team_id = $1 `
+    , [teamId]
+  );
+  // メンバーは0でも返却する
   let resMember = [];
   members.rows.forEach(function(row) {
     resMember.push({userId : row.user_id,
@@ -128,12 +153,12 @@ router.post('/', async function(req, res, next) {
   let params = req.body;
   // チームID
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // チーム名
   let teamName = params.teamName;
-  if (! validateUtil.isParamVal(teamName, "チーム名")) {
+  if (! validateUtil.isEmptyText(teamName, "チーム名")) {
     return res.status(400).send({message : messageUtil.errMessage001("チーム名", "teamName")});
   }
 
@@ -141,7 +166,7 @@ router.post('/', async function(req, res, next) {
   let content = params.content;
   // 機能名
   let functionName = params.functionName;
-  if (! validateUtil.isParamVal(functionName, "機能名")) {
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
 
@@ -175,22 +200,46 @@ router.post('/', async function(req, res, next) {
  * チーム更新API.<br/>
  * PUT(http://localhost:3000/api/v1/teams)
  */
-router.put('/', function(req, res, next) {
-  console.log(req)
-  // TODO: 更新処理
+router.put('/', async function(req, res, next) {
+  console.log('PUT:v1/teams execution');
+
+  // tokenからuserIdを取得
+  let userId = await tokenUtil.getUserId(req, res);
+
+  // パラメータから登録情報を取得
+  let params = req.body;
+  // チームID
+  let teamId = params.teamId;
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
+  // チームIDのマスタ存在チェック
+  if (! await teamUtil.isTeamId(res, teamId)) {
+    return res.status(400).send({message : messageUtil.errMessage002("チーム")});
+  }
+  // チームの権限チェック
+  if (! await teamUtil.isTeamAuthority(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
+  }
+  // チーム名
+  let teamName = params.teamName;
+  // コンテンツ
+  let content = params.content;
+  // ユーザ情報
+  let users = params.users;
+  // 機能名
+  let functionName = params.functionName;
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
+
+  // TODO: 更新前のチーム情報を取得
+  // TODO: 更新前のチームメンバー情報を取得
+  // TODO: チームの更新
+  // TODO: チームメンバーの更新
+
   res.send({test : "PUT データ更新(未実装)",
             id : req.body.teamId});
-});
-
-/**
- * チーム情報を一部更新API（※いらない？とりあえず未実装のまま放置。）.<br/>
- * PUT(http://localhost:3000/api/v1/teams)
- */
-router.put('/', function(req, res, next) {
-  console.log(req)
-  // TODO: 一部更新処理（優先度：低）
-  res.send({test : "PUT 一部データ更新(未実装)",
-            id : req.body.id});
 });
 
 /**
@@ -200,14 +249,24 @@ router.put('/', function(req, res, next) {
  */
 router.delete('/', async function(req, res, next) {
   console.log('DELETE:v1/teams execution');
+  // tokenからuserIdを取得
+  let userId = await tokenUtil.getUserId(req, res);
+
 
   // パラメータ取得
   let teamId = req.body.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
+  // チームIDのマスタ存在チェック
+  if (! await teamUtil.isTeamId(res, teamId)) {
+    return res.status(400).send({message : messageUtil.errMessage002("チーム")});
+  }
+  // チームの権限チェック
+  if (! await teamUtil.isTeamAuthority(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
+  }
 
-  // TODO: チームの存在チェック
   // チーム削除
   let teamResult = await db.query(
     'DELETE FROM sw_m_team WHERE team_id = $1'
@@ -224,10 +283,6 @@ router.delete('/', async function(req, res, next) {
     ,teamId : teamId});
 });
 
-/**
- * チーム メンバー＆権限取得API.<br/>
- * GET(http://localhost:3000/api/v1/teams/users)
- */
 
 /**
  * チーム メンバー＆権限登録API.<br/>
@@ -241,49 +296,52 @@ router.post('/users', async function(req, res, next) {
   // パラメータから登録情報を取得
   let params = req.body;
   let teamId = params.teamId;
-  if (! validateUtil.isParamVal(teamId, "チームID")) {
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-
-  // チームの存在チェック
+  // チームIDのマスタ存在チェック
   if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
+    return res.status(400).send({message : messageUtil.errMessage002("チーム")});
   }
+  // 初回登録時、メンバー０人のためチェックしない
+  // // チームの権限チェック
+  // if (! await teamUtil.isTeamAuthority(teamId, insertUserId)) {
+  //   return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
+  // }
 
   // 機能名
   let functionName = params.functionName;
-  if (! validateUtil.isParamVal(functionName, "機能名")) {
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
   // ユーザ情報
   let users = params.users;
-  if (! validateUtil.isParamVal(users, "ユーザ情報")) {
+  if (! validateUtil.isEmptyText(users, "ユーザ情報")) {
     return res.status(400).send({message : messageUtil.errMessage001("ユーザ情報", "users")});
   }
-
 
   let result = [];
   for (let i=0; i<users.length; i++) {
     let rowParam = users[i];
     // ユーザID
     let userId = rowParam.userId;
-    if (! validateUtil.isParamVal(userId, "ユーザID")) {
+    if (! validateUtil.isEmptyText(userId, "ユーザID")) {
       return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
     }
 
     // メンバーの存在チェック
-   if (! await userUtil.isUserId(res, userId)) {
-    return res.status(500).send({message : "存在しないユーザIDです。(userId:" + userId + ")"});
-   }
+    if (! await userUtil.isUserId(res, userId)) {
+      return res.status(500).send({message : "存在しないユーザIDです。(userId:" + userId + ")"});
+    }
 
     // メンバー権限
     let userAuthority = rowParam.userAuthority;
-    if (! validateUtil.isParamVal(userAuthority, "メンバー権限")) {
+    if (! validateUtil.isEmptyBool(userAuthority, "メンバー権限")) {
       return res.status(400).send({message : messageUtil.errMessage001("メンバー権限", "userAuthority")});
     }
     // 管理者権限
     let administratorAuthority = rowParam.administratorAuthority;
-    if (! validateUtil.isParamVal(administratorAuthority, "管理者権限")) {
+    if (! validateUtil.isEmptyBool(administratorAuthority, "管理者権限")) {
       return res.status(400).send({message : messageUtil.errMessage001("管理者権限", "administratorAuthority")});
     }
 
