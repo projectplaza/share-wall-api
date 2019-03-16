@@ -1,6 +1,6 @@
 
-// documentUtil
 const documentUtil = require('./app/documentUtil.js');
+const wallUtil = require('./app/wallUtil.js');
 
 module.exports = {
 
@@ -73,7 +73,55 @@ module.exports = {
       documentId = this.getDesignDocumentDocumentId();
     }
 
-    // フォルダIDを返却
+    // ドキュメントIDを返却
     return documentId;
+  },
+
+  /**
+   * ウォール用の利用可能なボードIDを生成し返却します。<br>
+   * ボードID:システム内で一意なキー
+   * @param {*} res レスポンス
+   * @return {*} ボードID
+   */
+  getWallBoardId: async function(res) {
+    console.log('SHARE-WALL-API-LOG : generatUtil - getWallBoardId()');
+
+    let boardId = '';
+
+    // ボードIDを生成
+    boardId = this.getRandomStr(res, 15);
+
+    // ボードIDの重複チェック
+    if (await wallUtil.isBoardId(boardId)) {
+      // 重複した場合、もう一度IDを生成
+      boardId = this.getWallBoardId(res);
+    }
+
+    // ボードIDを返却
+    return boardId;
+  },
+
+  /**
+   * ウォール用の利用可能なパネルIDを生成し返却します。<br>
+   * パネルID:システム内で一意なキー
+   * @param {*} res レスポンス
+   * @return {*} パネルID
+   */
+  getWallPanelId: async function(res) {
+    console.log('SHARE-WALL-API-LOG : generatUtil - getWallPanelId()');
+
+    let panelId = '';
+
+    // パネルIDを生成
+    panelId = this.getRandomStr(res, 15);
+
+    // パネルIDの重複チェック
+    if (await wallUtil.isPanelId(panelId)) {
+      // 重複した場合、もう一度IDを生成
+      panelId = this.getWallPanelId(res);
+    }
+
+    // パネルIDを返却
+    return panelId;
   }
 }
