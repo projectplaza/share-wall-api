@@ -79,16 +79,16 @@ router.post('/board', async function(req, res, next) {
     let params = req.body;
     // チームID
     let teamId = params.teamId;
-    validateUtil.validate400(res, teamId, "チームID", "teamId");
+    validateUtil.isEmptyText(res, teamId, "チームID", "teamId");
     // プロジェクトID
     let projectId = params.projectId;
-    validateUtil.validate400(res, projectId, "プロジェクトID", "projectId");
+    validateUtil.isEmptyText(res, projectId, "プロジェクトID", "projectId");
     // ボード名
     let boardName = params.boardName;
-    validateUtil.validate400(res, boardName, "ボード名", "boardName");
+    validateUtil.isEmptyText(res, boardName, "ボード名", "boardName");
     // 機能名
     let functionName = params.functionName;
-    validateUtil.validate400(res, functionName, "機能名", "functionName");
+    validateUtil.isEmptyText(res, functionName, "機能名", "functionName");
 
     // ボードIDを生成
     let boardId = await generatUtil.getWallBoardId(res);
