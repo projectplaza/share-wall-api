@@ -7,12 +7,11 @@
  * GET(http://localhost:3000/api/v1/wall/board)
  * ボード登録API（単体）
  * POST(http://localhost:3000/api/v1/wall/board)
- * ボード更新API（単体）
+ * ボード更新API（複数）
  * PUT(http://localhost:3000/api/v1/wall/board)
- * ボード順序更新（複数）
- * PUT(http://localhost:3000/api/v1/wall/board/order)
  * ボード削除API（単体）
  * DELETE(http://localhost:3000/api/v1/wall/board)
+ * 
  * パネル＆タスク一覧取得API（複数）
  * GET(http://localhost:3000/api/v1/wall/panel/task/list)
  * パネル一覧取得API（複数）
@@ -21,20 +20,17 @@
  * GET(http://localhost:3000/api/v1/wall/panel)
  * パネル登録API（単体）
  * POST(http://localhost:3000/api/v1/wall/panel)
- * パネル更新API（単体）
+ * パネル更新API（複数）
  * PUT(http://localhost:3000/api/v1/wall/panel)
- * パネル順序更新API（複数）
- * PUT(http://localhost:3000/api/v1/wall/panel/list/order)
  * パネル削除API（単体）
  * DELETE(http://localhost:3000/api/v1/wall/panel)
- * タスク一覧取得API（複数）
+ * 
+ * タスク一覧取得API（複数）※実装見送り
  * GET(http://localhost:3000/api/v1/wall/task/list)
  * タスク詳細取得API（単体）
  * GET(http://localhost:3000/api/v1/wall/task)
- * タスク更新API（単体）
+ * タスク更新API（複数）
  * PUT(http://localhost:3000/api/v1/wall/task)
- * タスク所属パネル＆順序更新API（複数）
- * PUT(http://localhost:3000/api/v1/wall/task/order/panel)
  * タスク削除API（単体）
  * DELETE(http://localhost:3000/api/v1/wall/task)
  * 
@@ -51,11 +47,66 @@ const teamUtil = require('../../app/util/main/teamUtil.js');
 const projectUtil = require('../../app/util/main/projectUtil.js');
 const generatUtil = require('../../app/util/generatUtil.js');
 const validateUtil = require('../../app/util/validateUtil.js');
+const messageUtil = require('../../app/util/messageUtil.js');
 
 /**
  * ボード一覧取得API（複数）
  * GET(http://localhost:3000/api/v1/wall/board/list)
  */
+router.get('/board/list', async function(req, res, next) {
+    console.log('GET:v1/wall/board/list execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータ取得
+    let params = req.query;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // プロジェクト所属チェック
+    if (! await projectUtil.isProjectMember(res, projectId, userId)) {
+      return res.status(500).send( { message: 'プロジェクトに所属していません。' } );
+    }
+  
+    // 検索
+    let boards = await db.query(
+        `SELECT * 
+        FROM sw_t_wall_board 
+        WHERE team_id = $1 
+        AND project_id = $2 
+        ORDER BY order_no`,
+        [teamId, projectId]);
+    if (!boards.rows || boards.rows.length == 0) {
+      // ボードが存在しない場合、空のリストを返却
+      return res.send([]);
+    }
+
+    // 検索結果
+    let result = [];
+    boards.rows.forEach(function(row) {
+      result.push({
+        "teamId" : row.team_id
+        , "projectId" : row.project_id
+        , "boardsId" : row.boards_id
+        , "boardsName" : row.boards_name
+        , "order" : row.order_no
+        , "create_user" : row.createUser
+        , "create_function" : row.createFunction
+        , "create_datetime" : row.createDatetime
+      });
+    });
+    res.send(result);
+});
+
+
 /**
  * ボード詳細取得API（単体）
  * GET(http://localhost:3000/api/v1/wall/board)
@@ -64,10 +115,6 @@ const validateUtil = require('../../app/util/validateUtil.js');
 /**
  * ボード登録API（単体）
  * POST(http://localhost:3000/api/v1/wall/board)
- *   "teamId" : "チームID",
-    "projectId" : "プロジェクトID",
-    "boardName": "ボード名",
-    "functionName" : "機能名"
  */
 router.post('/board', async function(req, res, next) {
     console.log('POST:v1/wall/board execution');
