@@ -3,7 +3,7 @@
  * 
  * ボード一覧取得API（複数）
  * GET(http://localhost:3000/api/v1/wall/board/list)
- * ボード詳細取得API（単体）
+ * ボード詳細取得API（単体）※実装見送り
  * GET(http://localhost:3000/api/v1/wall/board)
  * ボード登録API（単体）
  * POST(http://localhost:3000/api/v1/wall/board)
@@ -16,7 +16,7 @@
  * GET(http://localhost:3000/api/v1/wall/panel/task/list)
  * パネル一覧取得API（複数）
  * GET(http://localhost:3000/api/v1/wall/panel/list)
- * パネル詳細取得API（単体）
+ * パネル詳細取得API（単体）※実装見送り
  * GET(http://localhost:3000/api/v1/wall/panel)
  * パネル登録API（単体）
  * POST(http://localhost:3000/api/v1/wall/panel)
@@ -29,6 +29,8 @@
  * GET(http://localhost:3000/api/v1/wall/task/list)
  * タスク詳細取得API（単体）
  * GET(http://localhost:3000/api/v1/wall/task)
+ * タスク登録API（単体）
+ * POST(http://localhost:3000/api/v1/wall/task)
  * タスク更新API（複数）
  * PUT(http://localhost:3000/api/v1/wall/task)
  * タスク削除API（単体）
@@ -92,25 +94,21 @@ router.get('/board/list', async function(req, res, next) {
     // 検索結果
     let result = [];
     boards.rows.forEach(function(row) {
+        console.log(row)
       result.push({
         "teamId" : row.team_id
         , "projectId" : row.project_id
-        , "boardsId" : row.boards_id
-        , "boardsName" : row.boards_name
+        , "boardId" : row.board_id
+        , "boardName" : row.board_name
         , "order" : row.order_no
-        , "create_user" : row.createUser
-        , "create_function" : row.createFunction
-        , "create_datetime" : row.createDatetime
+        , "create_user" : row.create_user
+        , "create_function" : row.create_function
+        , "create_datetime" : row.update_datetime
       });
     });
     res.send(result);
 });
 
-
-/**
- * ボード詳細取得API（単体）
- * GET(http://localhost:3000/api/v1/wall/board)
- */
 
 /**
  * ボード登録API（単体）
@@ -126,16 +124,28 @@ router.post('/board', async function(req, res, next) {
     let params = req.body;
     // チームID
     let teamId = params.teamId;
-    validateUtil.isEmptyText(res, teamId, "チームID", "teamId");
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
     // プロジェクトID
     let projectId = params.projectId;
-    validateUtil.isEmptyText(res, projectId, "プロジェクトID", "projectId");
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
     // ボード名
     let boardName = params.boardName;
-    validateUtil.isEmptyText(res, boardName, "ボード名", "boardName");
+    if (! validateUtil.isEmptyText(boardName, "ボード名")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボード名", "boardName")});
+    }
     // 機能名
     let functionName = params.functionName;
-    validateUtil.isEmptyText(res, functionName, "機能名", "functionName");
+    if (! validateUtil.isEmptyText(functionName, "機能名")) {
+        return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+    }
 
     // ボードIDを生成
     let boardId = await generatUtil.getWallBoardId(res);
@@ -174,7 +184,88 @@ router.post('/board', async function(req, res, next) {
     });
   });
   
+/**
+ * パネル登録API（単体）
+ * POST(http://localhost:3000/api/v1/wall/panel)
+ */
+router.post('/panel', async function(req, res, next) {
+    console.log('POST:v1/wall/panel execution');
   
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータから登録情報を取得
+    let params = req.body;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // TODO: マスタ存在チェック
+    // パネル名
+    let panelName = params.panelName;
+    if (! validateUtil.isEmptyText(panelName, "パネル名")) {
+        return res.status(400).send({message : messageUtil.errMessage001("パネル名", "panelName")});
+    }
+    // 機能名
+    let functionName = params.functionName;
+    if (! validateUtil.isEmptyText(functionName, "機能名")) {
+        return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+    }
 
+    // パネルIDを生成
+    // TODO: パネルIDは、ボードID＋連番 としたい！
+    let panelId = await generatUtil.getWallPanelId(res);
+    let orderNo = 0;
+  
+    // 登録日時
+    let insertDate = new Date();
+  
+    // パネル登録
+    let newPanel = await db.query(
+        `INSERT INTO sw_t_wall_panel (
+            board_id,
+            panel_id,
+            panel_name,
+            order_no,
+            create_user,
+            create_function,
+            create_datetime,
+            update_user,
+            update_function,
+            update_datetime)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $5, $6, $7)`
+        , [boardId, panelId, panelName, orderNo, userId, functionName, insertDate]);
+  
+    // 登録情報を返却
+    res.send({
+        boardId : boardId,
+        panelId : panelId,
+        panelName : panelName,
+        orderNo : orderNo,
+        createUser : userId,
+        createFunction : functionName,
+        createDatetime : insertDate
+    });
+  });
+  
+/**
+ * タスク登録API（単体）
+ * POST(http://localhost:3000/api/v1/wall/task)
+ */
 
 module.exports = router;
