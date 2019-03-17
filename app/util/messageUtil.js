@@ -23,5 +23,13 @@ module.exports = {
    */
   errMessage003: function(logicalName) {
     return logicalName + "の権限がありません。";
+  },
+
+  /**
+   * [logicalName]の桁数が不正です。([num])
+   * @param {*} logicalName 実行結果の論理名
+   */
+  errMessage004: function(logicalName, num) {
+    return logicalName + "は" + num + "桁で入力してください。";
   }
 }

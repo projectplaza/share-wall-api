@@ -123,5 +123,29 @@ module.exports = {
 
     // パネルIDを返却
     return panelId;
+  },
+
+  /**
+   * ウォール用の利用可能なタスクIDを生成し返却します。<br>
+   * タスクID:ボード内で一意なキー
+   * @param {*} res レスポンス
+   * @return {*} タスクID
+   */
+  getWallTaskId: async function(res) {
+    console.log('SHARE-WALL-API-LOG : generatUtil - getWallTaskId()');
+
+    let taskId = '';
+
+    // タスクIDを生成
+    taskId = this.getRandomStr(res, 15);
+
+    // タスクIDの重複チェック
+    if (await wallUtil.isTaskId(taskId)) {
+      // 重複した場合、もう一度IDを生成
+      taskId = this.getWallTaskId(res);
+    }
+
+    // タスクIDを返却
+    return taskId;
   }
 }

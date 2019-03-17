@@ -228,7 +228,7 @@ router.post('/panel', async function(req, res, next) {
     }
 
     // パネルIDを生成
-    // TODO: パネルIDは、ボードID＋連番 としたい！
+    // TODO: パネルIDは、ボードID＋p＋連番 としたい！
     let panelId = await generatUtil.getWallPanelId(res);
     let orderNo = 0;
   
@@ -261,11 +261,136 @@ router.post('/panel', async function(req, res, next) {
         createFunction : functionName,
         createDatetime : insertDate
     });
-  });
+});
   
 /**
  * タスク登録API（単体）
  * POST(http://localhost:3000/api/v1/wall/task)
  */
+router.post('/task', async function(req, res, next) {
+    console.log('POST:v1/wall/task execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータから登録情報を取得
+    let params = req.body;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // TODO: マスタ存在チェック
+    // パネルID
+    let panelId = params.panelId;
+    if (! validateUtil.isEmptyText(panelId, "パネルID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("パネルID", "panelId")});
+    }
+    // TODO: マスタ存在チェック
+    // タイトル
+    let title = params.title;
+    if (! validateUtil.isEmptyText(title, "タイトル")) {
+        return res.status(400).send({message : messageUtil.errMessage001("タイトル", "title")});
+    }
+    // 内容
+    let content = params.content;
+    if (! validateUtil.isEmptyText(content, "内容")) {
+        content = "";
+    }
+    // 優先度
+    let priority = params.priority;
+    if (! validateUtil.isEmptyText(priority, "優先度")) {
+        priority = "";
+    }
+    // TODO: 文字数チェック　１桁
+    if (priority.length > 1) {
+        return res.status(400).send({message : messageUtil.errMessage004("優先度", "1")});
+    }
+    // 担当ユーザID
+    let assignUser = params.assignUser;
+    if (! validateUtil.isEmptyText(assignUser, "担当ユーザID")) {
+        assignUser = "";
+    }
+    // TODO: マスタ存在チェック
+    // 開始日
+    let startDate = params.startDate;
+    if (! validateUtil.isEmptyText(startDate, "開始日")) {
+        startDate = null;
+    }
+    // 期限日
+    let deadline = params.deadline;
+    if (! validateUtil.isEmptyText(deadline, "期限日")) {
+        deadline = null;
+    }
+    // TODO: 開始日＜期限日チェック
+    // 機能名
+    let functionName = params.functionName;
+    if (! validateUtil.isEmptyText(functionName, "機能名")) {
+        return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+    }
+
+    // タスクIDを生成
+    // TODO: タスクIDも、ボードID＋t＋連番 としたい！
+    let taskId = await generatUtil.getWallPanelId(res);
+    let orderNo = 0;
+  
+    // 登録日時
+    let insertDate = new Date();
+  
+    // タスク登録
+    let newTask = await db.query(
+        `INSERT INTO sw_t_wall_task (
+            board_id,
+            panel_id,
+            task_id,
+            title,
+            order_no,
+            content,
+            priority,
+            assign_user,
+            start_date,
+            deadline,
+            create_user,
+            create_function,
+            create_datetime,
+            update_user,
+            update_function,
+            update_datetime)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $11, $12, $13)`
+        , [boardId, panelId, taskId, title, orderNo, content, priority, assignUser, startDate, deadline,
+             userId, functionName, insertDate]);
+            
+    // 登録情報を返却
+    res.send({
+        boardId : boardId,
+        panelId : panelId,
+        taskId : taskId,
+        title : title,
+        order : orderNo,
+        content : content,
+        priority : priority,
+        assignUser : assignUser,
+        startDate : startDate,
+        deadline : deadline,
+        createUser : userId,
+        createFunction : functionName,
+        createDatetime : insertDate
+    });
+});
+
 
 module.exports = router;
