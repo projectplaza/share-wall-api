@@ -111,7 +111,6 @@ router.get('/board/list', async function(req, res, next) {
     res.send(result);
 });
 
-
 /**
  * パネル＆タスク一覧取得API（複数）
  * GET(http://localhost:3000/api/v1/wall/panel/task/list)
@@ -214,7 +213,6 @@ router.get('/panel/task/list', async function(req, res, next) {
     res.send(resultPanels);
 });
 
-
 /**
  * パネル一覧取得API（複数）
  * GET(http://localhost:3000/api/v1/wall/panel/list)
@@ -281,6 +279,100 @@ router.get('/panel/list', async function(req, res, next) {
         , "order" : row.order_no
       });
     });
+    res.send(result);
+});
+
+
+/**
+ * タスク詳細取得API（単体）
+ * GET(http://localhost:3000/api/v1/wall/task)
+ */
+router.get('/task', async function(req, res, next) {
+    console.log('GET:v1/wall/task execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータ取得
+    let params = req.query;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // TODO: マスタチェック
+    // TODO: 所属チェック
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // TODO: マスタチェック
+    // プロジェクト所属チェック
+    if (! await projectUtil.isProjectMember(res, projectId, userId)) {
+      return res.status(500).send( { message: 'プロジェクトに所属していません。' } );
+    }
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // TODO: マスタチェック
+    // タスクID
+    let taskId = params.taskId;
+    if (! validateUtil.isEmptyText(taskId, "タスクID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
+    }
+    // TODO: マスタチェック
+
+  
+    // 検索
+    let task = await db.query(
+        `SELECT board.team_id
+              , board.project_id
+              , board.board_id
+              , panel.panel_id
+              , task.task_id
+              , task.title
+              , task.priority
+              , task.assign_user
+              , ur.user_name assign_user_name
+              , task.start_date
+              , task.deadline
+              , task.order_no
+           FROM sw_t_wall_board board
+          INNER JOIN sw_t_wall_panel panel
+             ON board.board_id = panel.board_id
+          INNER JOIN sw_t_wall_task task
+             ON board.board_id = task.board_id
+            AND panel.panel_id = task.panel_id
+           LEFT JOIN sw_m_user ur
+             ON task.assign_user = ur.user_id
+          WHERE board.team_id = $1
+            AND board.project_id = $2
+            AND board.board_id = $3
+            AND task.task_id = $4`,
+        [teamId, projectId, boardId, taskId]);
+    if (!task.rows || task.rows.length == 0) {
+      // タスクが存在しない場合、空のリストを返却
+      return res.send([]);
+    }
+
+    // 検索結果
+    let result = {
+        "teamId" : task.rows[0].team_id
+        , "projectId" : task.rows[0].project_id
+        , "boardId" : task.rows[0].board_id
+        , "panelId" : task.rows[0].panel_id
+        , "taskId" : task.rows[0].task_id
+        , "title" : task.rows[0].title
+        , "priority" : task.rows[0].priority
+        , "assignUser" : task.rows[0].assign_user
+        , "assignUserName" : task.rows[0].assign_user_name
+        , "startDate" : task.rows[0].start_date
+        , "deadline" : task.rows[0].deadline
+        , "order" : task.rows[0].order_no
+    };
     res.send(result);
 });
 
