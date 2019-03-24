@@ -717,8 +717,6 @@ router.put('/board', async function(req, res, next) {
                     AND project_id = $2
                     AND board_id = $3`
                   , [teamId, projectId, boardId]);
-            
-            console.log(befBoard);
 
             // ボード名
             let boardName = board.boardName;
@@ -821,15 +819,28 @@ router.put('/panel', async function(req, res, next) {
                 return res.status(400).send({message : messageUtil.errMessage001("パネルID", "panelId")});
             }
             // TODO: マスタ存在チェック（チーム、プロジェクト、ボードに紐づくパネルIDが存在するか）
+
+            // パネルを取得
+            let befPanel = await db.query(
+                `SELECT *
+                   FROM sw_t_wall_board board
+                   LEFT JOIN sw_t_wall_panel panel
+                     ON board.board_id = panel.board_id
+                  WHERE board.team_id = $1
+                    AND board.project_id = $2
+                    AND board.board_id = $3
+                    AND panel.panel_id = $4`
+                  , [teamId, projectId, boardId, panelId]);
+
             // パネル名
             let panelName = panel.panelName;
             if (! validateUtil.isEmptyText(panelName, "パネル名")) {
-                return res.status(400).send({message : messageUtil.errMessage001("パネル名", "panelName")});
+                panelName = befPanel.rows[0].panel_name;
             }
             // パネル順序
             let orderNo = panel.order;
             if (! validateUtil.isEmptyText(orderNo, "パネル順序")) {
-                return res.status(400).send({message : messageUtil.errMessage001("パネル順序", "order")});
+                orderNo = befPanel.rows[0].order_no;
             }
             // パネル更新
             let newBoard = await db.query(
@@ -841,7 +852,8 @@ router.put('/panel', async function(req, res, next) {
                     , update_user = $5 
                     , update_function = $6 
                     , update_datetime = $7 
-                WHERE board_id = $1 `
+                WHERE board_id = $1
+                  AND panel_id = $2 `
                 , [boardId, panelId, panelName, orderNo, userId, functionName, updateDate]);
         
             resultPanels.push({
