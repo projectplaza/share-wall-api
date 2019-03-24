@@ -148,68 +148,84 @@ router.get('/panel/task/list', async function(req, res, next) {
     // TODO: マスタチェック
 
     // 検索
-    let contents = await db.query(
+    let panels = await db.query(
         `SELECT board.board_id
               , panel.panel_id
               , panel.panel_name
               , panel.order_no AS panel_order
-              , task.task_id
-              , task.title
-              , task.priority
-              , task.assign_user
-              , task.start_date
-              , task.deadline
-              , task.order_no AS task_order
            FROM sw_t_wall_board AS board
-           LEFT JOIN sw_t_wall_panel AS panel
+          INNER JOIN sw_t_wall_panel AS panel
              ON board.board_id = panel.board_id
-           LEFT JOIN sw_t_wall_task AS task
-             ON board.board_id = task.board_id
-            AND panel.panel_id = task.panel_id
           WHERE board.team_id = $1
-            AND project_id = $2
+            AND board.project_id = $2
             AND board.board_id = $3
-          ORDER BY panel.order_no, task.order_no`,
+          ORDER BY panel.order_no`,
         [teamId, projectId, boardId]);
-    if (!contents.rows || contents.rows.length == 0) {
+    if (!panels.rows || panels.rows.length == 0) {
       // 検索結果が存在しない場合、空のリストを返却
       return res.send([]);
     }
-    console.log(contents.rows);
 
-    // 検索結果
-    let beforePanel = "";
     let resultPanels = [];
-    let resultTasks = [];
-    for (let row=1; contents.rows.length > row; row++) {
-        // タスク情報を追加
-        resultTasks.push({
-            "taskId" : contents.rows[row].task_id
-            , "title" : contents.rows[row].title
-            , "priority" : contents.rows[row].priority
-            , "assignUser" : contents.rows[row].assign_user
-            , "startDate" : contents.rows[row].start_date
-            , "deadline" : contents.rows[row].deadline
-            , "taskOrder" : contents.rows[row].task_order
-        });
+    await Promise.all(
+        panels.rows.map(async function(panel) {
 
-        // パネル判定（現在のパネルID=次のパネルID）
-        if (contents.rows.length <= row+1 && contents.rows[row].panel_id.equals(contents.rows[row+1].panel_id)) {
-            break;
-        } else {
-            // パネル情報を追加
+            let resultTasks = [];
+            // タスク検索
+            let tasks = await db.query(
+                `SELECT board.board_id
+                      , panel.panel_id
+                      , task.task_id
+                      , task.title
+                      , task.priority
+                      , task.assign_user
+                      , task.start_date
+                      , task.deadline
+                      , task.order_no AS task_order
+                   FROM sw_t_wall_board AS board
+                  INNER JOIN sw_t_wall_panel AS panel
+                     ON board.board_id = panel.board_id
+                  INNER JOIN sw_t_wall_task AS task
+                     ON board.board_id = task.board_id
+                    AND panel.panel_id = task.panel_id
+                  WHERE board.team_id = $1
+                    AND board.project_id = $2
+                    AND board.board_id = $3
+                    AND panel.panel_id = $4
+                  ORDER BY task.order_no`,
+                [teamId, projectId, boardId, panel.panel_id]);
+            if (!tasks.rows || tasks.rows.length == 0) {
+              // 検索結果が存在しない場合、空のリストを設定
+            } else {
+                console.log('-------');
+                console.log(tasks.rows);
+
+                // タスク情報を設定
+                tasks.rows.forEach(async function(row) {
+                    resultTasks.push({
+                        "taskId" : row.task_id
+                        , "title" : row.title
+                        , "priority" : row.priority
+                        , "assignUser" : row.assign_user
+                        , "startDate" : row.start_date
+                        , "deadline" : row.deadline
+                        , "taskOrder" : row.task_order
+                    });
+                });
+            }
+
+            // パネル情報を設定
             resultPanels.push({
-                "boardId" : contents.rows[row].board_id
-                , "panelId" : contents.rows[row].panel_id
-                , "panelName" : contents.rows[row].panel_name
-                , "panelOrder" : contents.rows[row].panel_order
+                "boardId" : panel.board_id
+                , "panelId" : panel.panel_id
+                , "panelName" : panel.panel_name
+                , "panelOrder" : panel.panel_order
                 , "task" : resultTasks
             });
-            // タスク情報をリセット
-            resultTasks = [];
-            break;
-        }
-    }
+        })
+    );
+
+    // 検索結果
     res.send(resultPanels);
 });
 
@@ -876,7 +892,8 @@ router.put('/panel', async function(req, res, next) {
         "updateDatetime" : updateDate
     });
 });
-  
+
+// TODO: 実装中↓
 /**
  * タスク更新API（複数）
  * PUT(http://localhost:3000/api/v1/wall/task)
