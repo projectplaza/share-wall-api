@@ -877,5 +877,185 @@ router.put('/panel', async function(req, res, next) {
     });
 });
   
+/**
+ * タスク更新API（複数）
+ * PUT(http://localhost:3000/api/v1/wall/task)
+ */
+router.put('/task', async function(req, res, next) {
+    console.log('PUT:v1/wall/task execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータから登録情報を取得
+    let params = req.body;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // TODO: マスタ存在チェック
+    // タスク情報
+    let tasks = params.tasks;
+    if (! validateUtil.isEmptyObject(tasks, "タスク情報")) {
+        return res.status(400).send({message : messageUtil.errMessage001("タスク情報", "tasks")});
+    }
+    // 機能名
+    let functionName = params.functionName;
+    if (! validateUtil.isEmptyText(functionName, "機能名")) {
+        return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+    }
+
+    // 更新日時
+    let updateDate = new Date();
+
+    let resultTasks = [];
+    await Promise.all(
+        tasks.map(async function(task) {
+            // タスクID
+            let taskId = task.taskId;
+            if (! validateUtil.isEmptyText(taskId, "タスクID")) {
+                return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
+            }
+            // TODO: マスタ存在チェック（チーム、プロジェクト、ボードに紐づくタスクIDが存在するか）
+
+            // タスクを取得
+            let befTask = await db.query(
+                `SELECT *
+                   FROM sw_t_wall_board board
+                   LEFT JOIN sw_t_wall_task task
+                     ON board.board_id = task.board_id
+                  WHERE board.team_id = $1
+                    AND board.project_id = $2
+                    AND board.board_id = $3
+                    AND task.task_id = $4`
+                  , [teamId, projectId, boardId, taskId]);
+
+            console.log(befTask)
+
+            // パネルID
+            let panelId = task.panelId;
+            if (! validateUtil.isEmptyText(panelId, "パネルID")) {
+                panelId = befTask.rows[0].panel_id;
+            } else {
+                // TODO: マスタ存在チェック（チーム、プロジェクト、ボードに紐づくパネルIDが存在するか）
+            }
+            // タイトル
+            let title = task.title;
+            if (! validateUtil.isEmptyText(title, "タイトル")) {
+                title = befTask.rows[0].title;
+            }
+            // タイトル
+            let title = task.title;
+            if (! validateUtil.isEmptyText(title, "タイトル")) {
+                title = befTask.rows[0].title;
+            }
+            // 内容
+            let content = task.content;
+            if (! validateUtil.isEmptyText(content, "内容")) {
+                content = befTask.rows[0].content;
+            }
+            // 優先度
+            let priority = task.priority;
+            if (! validateUtil.isEmptyText(priority, "優先度")) {
+                priority = befTask.rows[0].priority;
+            }
+            // 担当者
+            let assignUser = task.assignUser;
+            if (! validateUtil.isEmptyText(assignUser, "担当者")) {
+                assignUser = befTask.rows[0].assign_user;
+            }
+            // 開始日
+            let startDate = task.startDate;
+            if (! validateUtil.isEmptyText(startDate, "開始日")) {
+                startDate = befTask.rows[0].start_date;
+            }
+            // 期限日
+            let deadline = task.deadline;
+            if (! validateUtil.isEmptyText(deadline, "期限日")) {
+                deadline = befTask.rows[0].deadline;
+            }
+            // タスク順序
+            let orderNo = task.order;
+            if (! validateUtil.isEmptyText(orderNo, "タスク順序")) {
+                orderNo = befTask.rows[0].order_no;
+            }
+            // タスク更新
+            let newBoard = await db.query(
+                `UPDATE sw_t_wall_task 
+                    SET board_id = $1 
+                    , panel_id = $2 
+                    , task_id = $3
+                    , title = $4
+                    , content = $5 
+                    , priority = $6 
+                    , assign_user = $7 
+                    , start_date = $8 
+                    , deadline = $9 
+                    , order_no = $10 
+                    , update_user = $11 
+                    , update_function = $12 
+                    , update_datetime = $13 
+                WHERE board_id = $1
+                  AND task_id = $3 `
+                , [
+                    boardId
+                    , panelId
+                    , taskId
+                    , title
+                    , content
+                    , priority
+                    , assignUser
+                    , startDate
+                    , deadline
+                    , orderNo
+                    , userId
+                    , functionName
+                    , updateDate
+                ]
+            );
+
+            resultTasks.push({
+                'boardId' : boardId,
+                'panelId' : panelId,
+                'taskId' : taskId,
+                'title' : title,
+                'content' : content,
+                'priority' : priority,
+                'assignUser' : assignUser,
+                'startDate' : startDate,
+                'deadline' : deadline,
+                'order' : orderNo
+            });
+        })
+    );
+
+    // 登録情報を返却
+    res.send({
+        "message": "タスクの更新に成功しました。",
+        "teamId" : teamId,
+        "projectId" : projectId,
+        "boardId" : boardId,
+        "tasks" : resultTasks,
+        "updateUser" : userId,
+        "updateFunction" : functionName,
+        "updateDatetime" : updateDate
+    });
+});
+  
 
   module.exports = router;
