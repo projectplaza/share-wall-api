@@ -282,7 +282,6 @@ router.get('/panel/list', async function(req, res, next) {
     res.send(result);
 });
 
-
 /**
  * タスク詳細取得API（単体）
  * GET(http://localhost:3000/api/v1/wall/task)
@@ -449,7 +448,7 @@ router.post('/board', async function(req, res, next) {
         createFunction : functionName,
         createDatetime : insertDate
     });
-  });
+});
   
 /**
  * パネル登録API（単体）
@@ -660,4 +659,99 @@ router.post('/task', async function(req, res, next) {
 });
 
 
-module.exports = router;
+/**
+ * ボード更新API（複数）
+ * PUT(http://localhost:3000/api/v1/wall/board)
+ */
+router.put('/board', async function(req, res, next) {
+    console.log('PUT:v1/wall/board execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータから登録情報を取得
+    let params = req.body;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
+    // ボード情報
+    let boards = params.boards;
+    if (! validateUtil.isEmptyObject(boards, "ボード情報")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボード情報", "boards")});
+    }
+    // 機能名
+    let functionName = params.functionName;
+    if (! validateUtil.isEmptyText(functionName, "機能名")) {
+        return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+    }
+
+    // 更新日時
+    let updateDate = new Date();
+
+    let resultBoards = [];
+    await boards.forEach( async function(board) {
+        // ボードID
+        let boardId = board.boardId;
+        if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+            return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+        }
+        // TODO: マスタ存在チェック
+        // ボード名
+        let boardName = board.boardName;
+        if (! validateUtil.isEmptyText(boardName, "ボード名")) {
+            return res.status(400).send({message : messageUtil.errMessage001("ボード名", "boardName")});
+        }
+        // ボード順序
+        let orderNo = board.order;
+        if (! validateUtil.isEmptyText(orderNo, "ボード順序")) {
+            return res.status(400).send({message : messageUtil.errMessage001("ボード順序", "order")});
+        }
+        // ボード更新
+        let newBoard = await db.query(
+            `UPDATE sw_t_wall_board 
+                SET team_id = $1 
+                , project_id = $2 
+                , board_id = $3 
+                , board_name = $4 
+                , order_no = $5 
+                , update_user = $6 
+                , update_function = $7 
+                , update_datetime = $8 
+            WHERE team_id = $1 
+                AND project_id = $2 
+                AND board_id = $3 `
+            , [teamId, projectId, boardId, boardName, orderNo, userId, functionName, updateDate]);
+    
+        resultBoards.push({
+            'boardId' : boardId,
+            'boardName' : boardName,
+            'order' : orderNo
+        });
+        console.log(resultBoards)
+    });
+  
+    // 登録情報を返却
+    res.send({
+        "message": "ボードの更新に成功しました。",
+        "teamId" : teamId,
+        "projectId" : projectId,
+        "boards" : resultBoards,
+        "updateUser" : userId,
+        "updateFunction" : functionName,
+        "updateDatetime" : updateDate
+    });
+});
+  
+
+  module.exports = router;

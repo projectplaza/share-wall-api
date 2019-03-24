@@ -45,6 +45,21 @@ module.exports = {
   },
 
   /**
+   * 引数のObjectに対してundefined、0件チェックを行う。
+   * @param {*} obj 検証するObject
+   * @param {*} logicalName Objectの論理名
+   * @return true:Objectあり/false:Objectなし
+   */
+  isEmptyObject: function(obj, logicalName) {
+    console.log('validateUtil - isEmptyObject(' + logicalName + ')');
+    // 実行結果の検証
+    if (obj == undefined || obj.length == 0) {
+      return false;
+    }
+    return true;
+  },
+
+  /**
    * 引数（SQLの実行結果）の取得チェックを行う。
    * @param {*} queryResult SQLの実行結果
    * @param {*} logicalName 実行結果の論理名

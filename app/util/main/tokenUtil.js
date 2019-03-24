@@ -17,7 +17,7 @@ module.exports = {
     // トークンからユーザIDを取得
     let tokens = await db.query('SELECT * FROM sw_t_token WHERE token = $1', [token]);
     if (!tokens.rows || tokens.rows.length == 0) {
-      res.json( { success: false, message: 'No token.' } );
+      res.status(403).send({ success: false, message: 'No token.' });
     }
 
     // ユーザIDを返却

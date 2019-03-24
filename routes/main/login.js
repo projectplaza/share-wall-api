@@ -100,7 +100,7 @@ router.use( function( req, res, next ){
   jwt.verify( token, app.get('superSecret'), function( err, decoded ){
     if( err ){
       //. 正当な値ではなかった場合はエラーメッセージを返す
-      return res.json( { success: false, message: 'Invalid token.' } );
+      return res.status(403).send( { success: false, message: 'Invalid token.' } );
     }
 
     //. 正当な値が設定されていた場合は処理を続ける
