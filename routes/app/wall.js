@@ -68,11 +68,14 @@ router.get('/board/list', async function(req, res, next) {
     if (! validateUtil.isEmptyText(teamId, "チームID")) {
       return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
     }
+    // TODO: マスタチェック
+    // TODO: 所属チェック
     // プロジェクトID
     let projectId = params.projectId;
     if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
       return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
     }
+    // TODO: マスタチェック
     // プロジェクト所属チェック
     if (! await projectUtil.isProjectMember(res, projectId, userId)) {
       return res.status(500).send( { message: 'プロジェクトに所属していません。' } );
@@ -94,7 +97,6 @@ router.get('/board/list', async function(req, res, next) {
     // 検索結果
     let result = [];
     boards.rows.forEach(function(row) {
-        console.log(row)
       result.push({
         "teamId" : row.team_id
         , "projectId" : row.project_id
@@ -107,6 +109,137 @@ router.get('/board/list', async function(req, res, next) {
       });
     });
     res.send(result);
+});
+
+
+/**
+ * パネル＆タスク一覧取得API（複数）
+ * GET(http://localhost:3000/api/v1/wall/panel/task/list)
+ */
+router.get('/panel/task/list', async function(req, res, next) {
+    console.log('GET:v1/wall/panel/task/list execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータ取得
+    let params = req.query;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // TODO: マスタチェック
+    // TODO: 所属チェック
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // TODO: マスタチェック
+    // プロジェクト所属チェック
+    if (! await projectUtil.isProjectMember(res, projectId, userId)) {
+      return res.status(500).send( { message: 'プロジェクトに所属していません。' } );
+    }
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // TODO: マスタチェック
+
+    // 検索
+    let contents = await db.query(
+        `SELECT board.board_id
+              , panel.panel_id
+              , panel.panel_name
+              , panel.order_no AS panel_order
+              , task.task_id
+              , task.title
+              , task.priority
+              , task.assign_user
+              , task.start_date
+              , task.deadline
+              , task.order_no AS task_order
+           FROM sw_t_wall_board AS board
+           LEFT JOIN sw_t_wall_panel AS panel
+             ON board.board_id = panel.board_id
+           LEFT JOIN sw_t_wall_task AS task
+             ON board.board_id = task.board_id
+            AND panel.panel_id = task.panel_id
+          WHERE board.team_id = $1
+            AND project_id = $2
+            AND board.board_id = $3
+          ORDER BY panel.order_no, task.order_no`,
+        [teamId, projectId, boardId]);
+    if (!contents.rows || contents.rows.length == 0) {
+      // 検索結果が存在しない場合、空のリストを返却
+      return res.send([]);
+    }
+    console.log(contents.rows);
+
+    // 検索結果
+    let beforePanel = "";
+    let resultPanels = [];
+    let resultTasks = [];
+    for (let row=1; contents.rows.length > row; row++) {
+        // タスク情報を追加
+        resultTasks.push({
+            "taskId" : contents.rows[row].task_id
+            , "title" : contents.rows[row].title
+            , "priority" : contents.rows[row].priority
+            , "assignUser" : contents.rows[row].assign_user
+            , "startDate" : contents.rows[row].start_date
+            , "deadline" : contents.rows[row].deadline
+            , "taskOrder" : contents.rows[row].task_order
+        });
+
+        // パネル判定（現在のパネルID=次のパネルID）
+        if (contents.rows.length <= row+1 && contents.rows[row].panel_id.equals(contents.rows[row+1].panel_id)) {
+            break;
+        } else {
+            // パネル情報を追加
+            resultPanels.push({
+                "boardId" : contents.rows[row].board_id
+                , "panelId" : contents.rows[row].panel_id
+                , "panelName" : contents.rows[row].panel_name
+                , "panelOrder" : contents.rows[row].panel_order
+                , "task" : resultTasks
+            });
+            // タスク情報をリセット
+            resultTasks = [];
+            break;
+        }
+    }
+    // contents.rows.forEach(function(row) {
+    //     if (beforePanel.equals("")) {
+    //         // 初回はタスク情報を設定
+    //     }
+    //     if (beforePanel.equals(row.panel_id)) {
+    //         // パネルIDが変わったとき
+    //         // パネルを設定
+    //         // タスクをクリア
+    //     }
+    //     resultTasks.push({
+    //         "taskId" : row.task_id
+    //         , "title" : row.title
+    //         , "priority" : row.priority
+    //         , "assignUser" : row.assign_user
+    //         , "startDate" : row.start_date
+    //         , "deadline" : row.deadline
+    //         , "taskOrder" : row.task_order
+    //     });
+    // });
+    // contents.rows.forEach(function(row) {
+    //     resultPanels.push({
+    //         "boardId" : row.board_id
+    //         , "panelId" : row.panel_id
+    //         , "panelName" : row.panel_name
+    //         , "panelOrder" : row.panel_order
+    //         , "task" : resultTasks
+    //     });
+    // });
+    res.send(resultPanels);
 });
 
 
