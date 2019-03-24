@@ -700,47 +700,48 @@ router.put('/board', async function(req, res, next) {
     let updateDate = new Date();
 
     let resultBoards = [];
-    await boards.forEach( async function(board) {
-        // ボードID
-        let boardId = board.boardId;
-        if (! validateUtil.isEmptyText(boardId, "ボードID")) {
-            return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
-        }
-        // TODO: マスタ存在チェック
-        // ボード名
-        let boardName = board.boardName;
-        if (! validateUtil.isEmptyText(boardName, "ボード名")) {
-            return res.status(400).send({message : messageUtil.errMessage001("ボード名", "boardName")});
-        }
-        // ボード順序
-        let orderNo = board.order;
-        if (! validateUtil.isEmptyText(orderNo, "ボード順序")) {
-            return res.status(400).send({message : messageUtil.errMessage001("ボード順序", "order")});
-        }
-        // ボード更新
-        let newBoard = await db.query(
-            `UPDATE sw_t_wall_board 
-                SET team_id = $1 
-                , project_id = $2 
-                , board_id = $3 
-                , board_name = $4 
-                , order_no = $5 
-                , update_user = $6 
-                , update_function = $7 
-                , update_datetime = $8 
-            WHERE team_id = $1 
+    await Promise.all(
+        boards.map(async function(board) {
+            // ボードID
+            let boardId = board.boardId;
+            if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+                return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+            }
+            // TODO: マスタ存在チェック
+            // ボード名
+            let boardName = board.boardName;
+            if (! validateUtil.isEmptyText(boardName, "ボード名")) {
+                return res.status(400).send({message : messageUtil.errMessage001("ボード名", "boardName")});
+            }
+            // ボード順序
+            let orderNo = board.order;
+            if (! validateUtil.isEmptyText(orderNo, "ボード順序")) {
+                return res.status(400).send({message : messageUtil.errMessage001("ボード順序", "order")});
+            }
+            // ボード更新
+            let newBoard = await db.query(
+                `UPDATE sw_t_wall_board 
+                    SET team_id = $1 
+                    , project_id = $2 
+                    , board_id = $3 
+                    , board_name = $4 
+                    , order_no = $5 
+                    , update_user = $6 
+                    , update_function = $7 
+                    , update_datetime = $8 
+                WHERE team_id = $1 
                 AND project_id = $2 
                 AND board_id = $3 `
-            , [teamId, projectId, boardId, boardName, orderNo, userId, functionName, updateDate]);
-    
-        resultBoards.push({
-            'boardId' : boardId,
-            'boardName' : boardName,
-            'order' : orderNo
-        });
-        console.log(resultBoards)
-    });
-  
+                , [teamId, projectId, boardId, boardName, orderNo, userId, functionName, updateDate]);
+        
+            resultBoards.push({
+                'boardId' : boardId,
+                'boardName' : boardName,
+                'order' : orderNo
+            });
+        })
+    );
+
     // 登録情報を返却
     res.send({
         "message": "ボードの更新に成功しました。",
