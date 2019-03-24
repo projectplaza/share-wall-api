@@ -211,35 +211,77 @@ router.get('/panel/task/list', async function(req, res, next) {
             break;
         }
     }
-    // contents.rows.forEach(function(row) {
-    //     if (beforePanel.equals("")) {
-    //         // 初回はタスク情報を設定
-    //     }
-    //     if (beforePanel.equals(row.panel_id)) {
-    //         // パネルIDが変わったとき
-    //         // パネルを設定
-    //         // タスクをクリア
-    //     }
-    //     resultTasks.push({
-    //         "taskId" : row.task_id
-    //         , "title" : row.title
-    //         , "priority" : row.priority
-    //         , "assignUser" : row.assign_user
-    //         , "startDate" : row.start_date
-    //         , "deadline" : row.deadline
-    //         , "taskOrder" : row.task_order
-    //     });
-    // });
-    // contents.rows.forEach(function(row) {
-    //     resultPanels.push({
-    //         "boardId" : row.board_id
-    //         , "panelId" : row.panel_id
-    //         , "panelName" : row.panel_name
-    //         , "panelOrder" : row.panel_order
-    //         , "task" : resultTasks
-    //     });
-    // });
     res.send(resultPanels);
+});
+
+
+/**
+ * パネル一覧取得API（複数）
+ * GET(http://localhost:3000/api/v1/wall/panel/list)
+ */
+router.get('/panel/list', async function(req, res, next) {
+    console.log('GET:v1/wall/panel/list execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータ取得
+    let params = req.query;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // TODO: マスタチェック
+    // TODO: 所属チェック
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // TODO: マスタチェック
+    // プロジェクト所属チェック
+    if (! await projectUtil.isProjectMember(res, projectId, userId)) {
+      return res.status(500).send( { message: 'プロジェクトに所属していません。' } );
+    }
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // TODO: マスタチェック
+
+  
+    // 検索
+    let panels = await db.query(
+        `SELECT board.board_id
+              , panel.panel_id
+              , panel.panel_name
+              , panel.order_no
+           FROM sw_t_wall_board board
+          INNER JOIN sw_t_wall_panel panel
+             ON board.board_id = panel.board_id
+          WHERE board.team_id = $1
+            AND board.project_id = $2
+            AND board.board_id = $3
+          ORDER BY panel.order_no`,
+        [teamId, projectId, boardId]);
+    if (!panels.rows || panels.rows.length == 0) {
+      // パネルが存在しない場合、空のリストを返却
+      return res.send([]);
+    }
+
+    // 検索結果
+    let result = [];
+    panels.rows.forEach(function(row) {
+      result.push({
+        "boardId" : row.board_id
+        , "panelId" : row.panel_id
+        , "panelName" : row.panel_name
+        , "order" : row.order_no
+      });
+    });
+    res.send(result);
 });
 
 
