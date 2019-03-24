@@ -708,15 +708,27 @@ router.put('/board', async function(req, res, next) {
                 return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
             }
             // TODO: マスタ存在チェック
+
+            // ボードを取得
+            let befBoard = await db.query(
+                `SELECT *
+                   FROM sw_t_wall_board
+                  WHERE team_id = $1
+                    AND project_id = $2
+                    AND board_id = $3`
+                  , [teamId, projectId, boardId]);
+            
+            console.log(befBoard);
+
             // ボード名
             let boardName = board.boardName;
             if (! validateUtil.isEmptyText(boardName, "ボード名")) {
-                return res.status(400).send({message : messageUtil.errMessage001("ボード名", "boardName")});
+                boardName = befBoard.rows[0].board_name;
             }
             // ボード順序
             let orderNo = board.order;
             if (! validateUtil.isEmptyText(orderNo, "ボード順序")) {
-                return res.status(400).send({message : messageUtil.errMessage001("ボード順序", "order")});
+                orderNo = befBoard.rows[0].order_no;
             }
             // ボード更新
             let newBoard = await db.query(
@@ -748,6 +760,105 @@ router.put('/board', async function(req, res, next) {
         "teamId" : teamId,
         "projectId" : projectId,
         "boards" : resultBoards,
+        "updateUser" : userId,
+        "updateFunction" : functionName,
+        "updateDatetime" : updateDate
+    });
+});
+  
+/**
+ * パネル更新API（複数）
+ * PUT(http://localhost:3000/api/v1/wall/panel)
+ */
+router.put('/panel', async function(req, res, next) {
+    console.log('PUT:v1/wall/panel execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータから登録情報を取得
+    let params = req.body;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // TODO: マスタ存在チェック
+    // TODO: 所属チェック
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // TODO: マスタ存在チェック
+    // パネル情報
+    let panels = params.panels;
+    if (! validateUtil.isEmptyObject(panels, "パネル情報")) {
+        return res.status(400).send({message : messageUtil.errMessage001("パネル情報", "panels")});
+    }
+    // 機能名
+    let functionName = params.functionName;
+    if (! validateUtil.isEmptyText(functionName, "機能名")) {
+        return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+    }
+
+    // 更新日時
+    let updateDate = new Date();
+
+    let resultPanels = [];
+    await Promise.all(
+        panels.map(async function(panel) {
+            // パネルID
+            let panelId = panel.panelId;
+            if (! validateUtil.isEmptyText(panelId, "パネルID")) {
+                return res.status(400).send({message : messageUtil.errMessage001("パネルID", "panelId")});
+            }
+            // TODO: マスタ存在チェック（チーム、プロジェクト、ボードに紐づくパネルIDが存在するか）
+            // パネル名
+            let panelName = panel.panelName;
+            if (! validateUtil.isEmptyText(panelName, "パネル名")) {
+                return res.status(400).send({message : messageUtil.errMessage001("パネル名", "panelName")});
+            }
+            // パネル順序
+            let orderNo = panel.order;
+            if (! validateUtil.isEmptyText(orderNo, "パネル順序")) {
+                return res.status(400).send({message : messageUtil.errMessage001("パネル順序", "order")});
+            }
+            // パネル更新
+            let newBoard = await db.query(
+                `UPDATE sw_t_wall_panel 
+                    SET board_id = $1 
+                    , panel_id = $2 
+                    , panel_name = $3 
+                    , order_no = $4 
+                    , update_user = $5 
+                    , update_function = $6 
+                    , update_datetime = $7 
+                WHERE board_id = $1 `
+                , [boardId, panelId, panelName, orderNo, userId, functionName, updateDate]);
+        
+            resultPanels.push({
+                'panelId' : panelId,
+                'panelName' : panelName,
+                'order' : orderNo
+            });
+        })
+    );
+
+    // 登録情報を返却
+    res.send({
+        "message": "パネルの更新に成功しました。",
+        "teamId" : teamId,
+        "projectId" : projectId,
+        "boardId" : boardId,
+        "panels" : resultPanels,
         "updateUser" : userId,
         "updateFunction" : functionName,
         "updateDatetime" : updateDate
