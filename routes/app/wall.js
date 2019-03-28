@@ -47,6 +47,7 @@ const db = require('../../db');
 const tokenUtil = require('../../app/util/main/tokenUtil.js');
 const teamUtil = require('../../app/util/main/teamUtil.js');
 const projectUtil = require('../../app/util/main/projectUtil.js');
+const wallUtil = require('../../app/util/app/wallUtil.js');
 const generatUtil = require('../../app/util/generatUtil.js');
 const validateUtil = require('../../app/util/validateUtil.js');
 const messageUtil = require('../../app/util/messageUtil.js');
@@ -1075,4 +1076,109 @@ router.put('/task', async function(req, res, next) {
 });
   
 
-  module.exports = router;
+/**
+ * ボード削除API（単体）
+ * DELETE(http://localhost:3000/api/v1/wall/board)
+ */
+router.delete('/board', async function(req, res, next) {
+    console.log('DELETE:v1/wall/board execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータから登録情報を取得
+    let params = req.body;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // チームIDのマスタチェック
+    if (! await teamUtil.isTeamId(res, teamId)) {
+      return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
+    }
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // プロジェクトIDのマスタチェック
+    if (! await projectUtil.isProjectId(res, projectId)) {
+      return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
+    }
+    // プロジェクト所属チェック
+    if (! await projectUtil.isProjectMember(res, projectId, userId)) {
+      return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+    }
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // ボードIDのマスタチェック
+    if (! await wallUtil.isBoardId(boardId)) {
+      return res.status(500).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
+    }
+  
+    // ボード削除処理
+    if (await deleteBoard(teamId, projectId, boardId)) {
+      res.send({
+        message : "ボードの削除に成功しました。"
+        , teamId : teamId
+        , projectId : projectId
+        , boardId : boardId
+      });
+    } else {
+      res.status(500).send({
+        message : "ボードの削除に失敗しました。(boardId:" + boardId + ")"
+      });
+    }
+});
+/** 
+ * ボード削除処理.
+ * 関連するボード、パネル、タスクを全て削除
+ */
+async function deleteBoard(teamId, projectId, boardId) {
+    console.log('document - deleteBoard()');
+
+    // ボード削除
+    let delBoard = await db.query(
+      `DELETE FROM sw_t_wall_board 
+       WHERE team_id = $1 
+       AND project_id = $2 
+       AND board_id = $3`
+       , [teamId, projectId, boardId]
+    );
+    if (delBoard.rowCount == 0) {
+        // 失敗
+        return false;
+    }
+
+    // パネル削除
+    let delPanel = await db.query(
+      `DELETE FROM sw_t_wall_panel 
+       WHERE board_id = $1`
+       , [boardId]
+    );
+    if (delPanel.rowCount == 0) {
+        // 失敗でもOK
+        // return false;
+    }
+
+    // タスク削除
+    let delTask = await db.query(
+        `DELETE FROM sw_t_wall_task 
+         WHERE board_id = $1`
+         , [boardId]
+    );
+    if (delTask.rowCount == 0) {
+        // 失敗でもOK
+        // return false;
+    }
+
+    return true;
+};
+
+
+
+module.exports = router;
