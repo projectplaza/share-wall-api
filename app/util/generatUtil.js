@@ -105,9 +105,10 @@ module.exports = {
    * ウォール用の利用可能なパネルIDを生成し返却します。<br>
    * パネルID:システム内で一意なキー
    * @param {*} res レスポンス
+   * @param {*} boardId ボードID
    * @return {*} パネルID
    */
-  getWallPanelId: async function(res) {
+  getWallPanelId: async function(res, boardId) {
     console.log('SHARE-WALL-API-LOG : generatUtil - getWallPanelId()');
 
     let panelId = '';
@@ -116,9 +117,9 @@ module.exports = {
     panelId = this.getRandomStr(res, 15);
 
     // パネルIDの重複チェック
-    if (await wallUtil.isPanelId(panelId)) {
+    if (await wallUtil.isPanelId(boardId, panelId)) {
       // 重複した場合、もう一度IDを生成
-      panelId = this.getWallPanelId(res);
+      panelId = this.getWallPanelId(res, boardId);
     }
 
     // パネルIDを返却
@@ -129,9 +130,10 @@ module.exports = {
    * ウォール用の利用可能なタスクIDを生成し返却します。<br>
    * タスクID:ボード内で一意なキー
    * @param {*} res レスポンス
+   * @param {*} boardId ボードID
    * @return {*} タスクID
    */
-  getWallTaskId: async function(res) {
+  getWallTaskId: async function(res, boardId) {
     console.log('SHARE-WALL-API-LOG : generatUtil - getWallTaskId()');
 
     let taskId = '';
@@ -140,9 +142,9 @@ module.exports = {
     taskId = this.getRandomStr(res, 15);
 
     // タスクIDの重複チェック
-    if (await wallUtil.isTaskId(taskId)) {
+    if (await wallUtil.isTaskId(boardId, taskId)) {
       // 重複した場合、もう一度IDを生成
-      taskId = this.getWallTaskId(res);
+      taskId = this.getWallTaskId(res, boardId);
     }
 
     // タスクIDを返却
