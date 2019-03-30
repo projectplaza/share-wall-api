@@ -226,6 +226,7 @@ async function findTask(teamId, projectId, boardId, panelId) {
                 , panel.panel_id
                 , task.task_id
                 , task.title
+                , task.content
                 , task.priority
                 , task.assign_user
                 , task.start_date
@@ -253,6 +254,7 @@ async function findTask(teamId, projectId, boardId, panelId) {
             resultTasks.push({
                 "taskId" : row.task_id
                 , "title" : row.title
+                , "content" : row.content
                 , "priority" : row.priority
                 , "assignUser" : row.assign_user
                 , "startDate" : row.start_date
