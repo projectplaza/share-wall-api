@@ -1004,11 +1004,6 @@ router.put('/task', async function(req, res, next) {
             if (! validateUtil.isEmptyText(title, "タイトル")) {
                 title = befTask.rows[0].title;
             }
-            // タイトル
-            let title = task.title;
-            if (! validateUtil.isEmptyText(title, "タイトル")) {
-                title = befTask.rows[0].title;
-            }
             // 内容
             let content = task.content;
             if (! validateUtil.isEmptyText(content, "内容")) {
