@@ -47,7 +47,7 @@ module.exports = {
       `SELECT count(panel_id)
          FROM sw_t_wall_panel
         WHERE board_id = $1
-          AND panel_id = $1`
+          AND panel_id = $2`
       , [boardId, panelId]
     );
     if (result != null && result.rows != null && result.rows[0].count > 0) {
