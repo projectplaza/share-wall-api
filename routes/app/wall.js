@@ -169,7 +169,7 @@ router.get('/panel/task/list', async function(req, res, next) {
         return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
     }
 
-    // 検索
+    // パネル検索
     let panels = await db.query(
         `SELECT board.board_id
               , panel.panel_id
@@ -188,68 +188,82 @@ router.get('/panel/task/list', async function(req, res, next) {
       return res.send([]);
     }
 
-    let resultPanels = [];
     await Promise.all(
-        panels.rows.map(async function(panel) {
+        // mapの結果的は配列
+        // asyncを付けてPromiseとして返却
+            panels.rows.map(async function(panel) {
 
-            let resultTasks = [];
-            // タスク検索
-            let tasks = await db.query(
-                `SELECT board.board_id
-                      , panel.panel_id
-                      , task.task_id
-                      , task.title
-                      , task.priority
-                      , task.assign_user
-                      , task.start_date
-                      , task.deadline
-                      , task.order_no AS task_order
-                   FROM sw_t_wall_board AS board
-                  INNER JOIN sw_t_wall_panel AS panel
-                     ON board.board_id = panel.board_id
-                  INNER JOIN sw_t_wall_task AS task
-                     ON board.board_id = task.board_id
-                    AND panel.panel_id = task.panel_id
-                  WHERE board.team_id = $1
-                    AND board.project_id = $2
-                    AND board.board_id = $3
-                    AND panel.panel_id = $4
-                  ORDER BY task.order_no`,
-                [teamId, projectId, boardId, panel.panel_id]);
-            if (!tasks.rows || tasks.rows.length == 0) {
-              // 検索結果が存在しない場合、空のリストを設定
-            } else {
-                console.log('-------');
-                console.log(tasks.rows);
+            // タスク取得
+            let resultTasks = await findTask(teamId, projectId, boardId, panel.panel_id);
 
-                // タスク情報を設定
-                tasks.rows.forEach(async function(row) {
-                    resultTasks.push({
-                        "taskId" : row.task_id
-                        , "title" : row.title
-                        , "priority" : row.priority
-                        , "assignUser" : row.assign_user
-                        , "startDate" : row.start_date
-                        , "deadline" : row.deadline
-                        , "taskOrder" : row.task_order
-                    });
-                });
-            }
-
-            // パネル情報を設定
-            resultPanels.push({
+            // パネル情報を返却
+            return {
                 "boardId" : panel.board_id
                 , "panelId" : panel.panel_id
                 , "panelName" : panel.panel_name
                 , "panelOrder" : panel.panel_order
                 , "task" : resultTasks
-            });
+            };
         })
-    );
-
-    // 検索結果
-    res.send(resultPanels);
+    ).then( function(resultPanels) {
+        // 検索結果
+        res.send(resultPanels);
+    });
 });
+/**
+ * タスク情報取得処理
+ * @param {*} teamId 
+ * @param {*} projectId 
+ * @param {*} boardId 
+ * @param {*} panelId 
+ */
+async function findTask(teamId, projectId, boardId, panelId) {
+    console.log('wall - findTask()');
+
+    // タスク検索
+    let tasks = await db.query(
+        `SELECT board.board_id
+                , panel.panel_id
+                , task.task_id
+                , task.title
+                , task.priority
+                , task.assign_user
+                , task.start_date
+                , task.deadline
+                , task.order_no AS task_order
+            FROM sw_t_wall_board AS board
+            INNER JOIN sw_t_wall_panel AS panel
+                ON board.board_id = panel.board_id
+            INNER JOIN sw_t_wall_task AS task
+                ON board.board_id = task.board_id
+            AND panel.panel_id = task.panel_id
+            WHERE board.team_id = $1
+            AND board.project_id = $2
+            AND board.board_id = $3
+            AND panel.panel_id = $4
+            ORDER BY task.order_no`,
+        [teamId, projectId, boardId, panelId]);
+    if (!tasks.rows || tasks.rows.length == 0) {
+        // 検索結果が存在しない場合、空のリストを設定
+        return [];
+    } else {
+        // タスク情報を設定
+        let resultTasks = [];
+        tasks.rows.forEach(async function(row) {
+            resultTasks.push({
+                "taskId" : row.task_id
+                , "title" : row.title
+                , "priority" : row.priority
+                , "assignUser" : row.assign_user
+                , "startDate" : row.start_date
+                , "deadline" : row.deadline
+                , "taskOrder" : row.task_order
+            });
+        });
+        return resultTasks;
+    }
+    
+};
 
 /**
  * パネル一覧取得API（複数）
@@ -1286,7 +1300,7 @@ router.delete('/board', async function(req, res, next) {
  * 関連するボード、パネル、タスクを全て削除
  */
 async function deleteBoard(teamId, projectId, boardId) {
-    console.log('document - deleteBoard()');
+    console.log('wall - deleteBoard()');
 
     // ボード削除
     let delBoard = await db.query(
@@ -1403,7 +1417,7 @@ router.delete('/panel', async function(req, res, next) {
  * 関連するパネル、タスクを全て削除
  */
 async function deletePanel(boardId, panelId) {
-    console.log('document - deletePanel()');
+    console.log('wall - deletePanel()');
 
     // パネル削除
     let delPanel = await db.query(
@@ -1508,7 +1522,7 @@ router.delete('/task', async function(req, res, next) {
  * タスク削除処理.
  */
 async function deleteTask(boardId, taskId) {
-    console.log('document - deleteTask()');
+    console.log('wall - deleteTask()');
 
     // タスク削除
     let delTask = await db.query(
