@@ -398,6 +398,7 @@ router.get('/task', async function(req, res, next) {
               , panel.panel_id
               , task.task_id
               , task.title
+              , task.content
               , task.priority
               , task.assign_user
               , ur.user_name assign_user_name
@@ -430,6 +431,7 @@ router.get('/task', async function(req, res, next) {
         , "panelId" : task.rows[0].panel_id
         , "taskId" : task.rows[0].task_id
         , "title" : task.rows[0].title
+        , "content" : task.rows[0].content
         , "priority" : task.rows[0].priority
         , "assignUser" : task.rows[0].assign_user
         , "assignUserName" : task.rows[0].assign_user_name
