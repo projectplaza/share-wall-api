@@ -81,5 +81,31 @@ module.exports = {
       return true;
     }
     return false;
+  },
+
+  /**
+   * 最大のタスクIDを取得します。
+   */
+  getMaxTaskId: async function(boardId) {
+    console.log('SHARE-WALL-API-LOG : wallUtil - getMaxTaskId()');
+    // パラメータチェック
+    if (boardId == null) {
+      return false;
+    }
+
+    // タスクの最大IDを取得
+    let result = await db.query(
+      `SELECT max(task_id)
+         FROM sw_t_wall_task
+        WHERE board_id = $1`
+      , [boardId]
+    );
+    if (result != null && result.rows != null) {
+      // 最大ID値を返却
+      return result.rows[0].max;
+    } else {
+      // 取得できない場合は0を返却
+      return 0;
+    }
   }
 }

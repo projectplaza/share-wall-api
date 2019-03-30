@@ -136,18 +136,10 @@ module.exports = {
   getWallTaskId: async function(res, boardId) {
     console.log('SHARE-WALL-API-LOG : generatUtil - getWallTaskId()');
 
-    let taskId = '';
+    let maxId = await wallUtil.getMaxTaskId(boardId);
+    console.log(maxId)
 
-    // タスクIDを生成
-    taskId = this.getRandomStr(res, 15);
-
-    // タスクIDの重複チェック
-    if (await wallUtil.isTaskId(boardId, taskId)) {
-      // 重複した場合、もう一度IDを生成
-      taskId = this.getWallTaskId(res, boardId);
-    }
-
-    // タスクIDを返却
-    return taskId;
+    // 最大値＋１を返却
+    return maxId + 1;
   }
 }
