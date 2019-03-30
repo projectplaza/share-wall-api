@@ -20,8 +20,8 @@ module.exports = {
    * @param {*} val 検証する文字列
    * @returns true:文字列あり/false:文字列なし（undefinedまたは空文字）
    */
-  isEmptyText: function(val) {
-    console.log('validateUtil - isEmptyText('+ val +')');
+  isEmptyText: function(val, logicalName) {
+    console.log('validateUtil - isEmptyText(' + logicalName + ':' + val +')');
     // 値の検証
     if (val == undefined || val == "") {
       return false;

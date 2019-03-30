@@ -693,12 +693,12 @@ router.put('/folder', async function(req, res, next) {
 
   // 更新用フォルダ名
   let updateFolderName = folder.rows[0].folder_name;
-  if (validateUtil.isEmptyText(folderName)) {
+  if (validateUtil.isEmptyText(folderName, "フォルダ名")) {
     updateFolderName = folderName;
   }
   // 更新用順序
   let updateOrderNo = folder.rows[0].order_no;
-  if (validateUtil.isEmptyText(orderNo)) {
+  if (validateUtil.isEmptyText(orderNo, "順序")) {
     updateOrderNo = orderNo;
   }
   // 更新日時
@@ -811,7 +811,7 @@ router.put('/document', async function(req, res, next) {
 
   // 更新用順序
   let updateOrderNo = documentInfo.rows[0].order_no;
-  if (validateUtil.isEmptyText(orderNo)) {
+  if (validateUtil.isEmptyText(orderNo, "順序")) {
     updateOrderNo = orderNo;
   }
   // 更新日時
@@ -858,12 +858,12 @@ router.put('/document', async function(req, res, next) {
 
   // 更新用ドキュメント名
   let updateDocumentName = contentInfo.rows[0].document_name;
-  if (validateUtil.isEmptyText(documentName)) {
+  if (validateUtil.isEmptyText(documentName, "ドキュメント名")) {
     updateDocumentName = documentName;
   }
   // 更新用コンテンツ
   let updateContent = contentInfo.rows[0].content;
-  if (validateUtil.isEmptyText(content)) {
+  if (validateUtil.isEmptyText(content, "内容")) {
     updateContent = content;
   }
   // 更新用バージョン
