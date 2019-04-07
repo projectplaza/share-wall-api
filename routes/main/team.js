@@ -7,13 +7,15 @@
  * GET(http://localhost:3000/api/v1/teams)
  * チーム登録API
  * POST(http://localhost:3000/api/v1/teams)
+ * チームメンバー登録API
+ * POST(http://localhost:3000/api/v1/teams/users)
  * チーム更新API
  * PUT(http://localhost:3000/api/v1/teams)
+ * チームメンバー更新API
+ * PUT(http://localhost:3000/api/v1/teams/users)
  * チーム削除API
  * DELETE(http://localhost:3000/api/v1/teams)
  * GET(http://localhost:3000/api/v1/teams/users)
- * チームメンバー登録API
- * POST(http://localhost:3000/api/v1/teams/users)
  */
 var express = require('express');
 var router = express.Router();
@@ -225,21 +227,68 @@ router.put('/', async function(req, res, next) {
   let teamName = params.teamName;
   // コンテンツ
   let content = params.content;
-  // ユーザ情報
-  let users = params.users;
   // 機能名
   let functionName = params.functionName;
   if (! validateUtil.isEmptyText(functionName, "機能名")) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
 
-  // TODO: 更新前のチーム情報を取得
-  // TODO: 更新前のチームメンバー情報を取得
-  // TODO: チームの更新
-  // TODO: チームメンバーの更新
+  // チーム検索
+  let team = await db.query(
+    `SELECT * 
+     FROM sw_m_team
+     WHERE team_id = $1`
+     , [teamId]
+  );
+  if (team.rowCount == 0) {
+    return res.status(500).send({message : "チーム取得に失敗しました。(teamId:" + teamId + ")"});
+  }
 
-  res.send({test : "PUT データ更新(未実装)",
-            id : req.body.teamId});
+  // 更新用チーム名
+  let updateTeamName = team.rows[0].team_name;
+  if (validateUtil.isEmptyText(teamName, "チーム名")) {
+    updateTeamName = teamName;
+  }
+  // 更新用コンテンツ
+  let updateContent = team.rows[0].content;
+  if (validateUtil.isEmptyText(content, "内容")) {
+    updateContent = content;
+  }
+  // 更新日時
+  let updateDate = new Date();
+
+  // チーム更新
+  let updTeam = await db.query(
+    `UPDATE sw_m_team 
+        SET team_name = $1 
+          , content = $2 
+          , update_user = $3 
+          , update_function = $4 
+          , update_datetime = $5 
+      WHERE team_id = $6`
+    , [
+      updateTeamName
+      , updateContent
+      , userId
+      , functionName
+      , updateDate
+      , teamId
+    ]
+  );
+  if (updTeam.rowCount == 0) {
+    return res.status(500).send({message : "チーム更新に失敗しました。(teamId:" + teamId + ")"});
+  }
+
+  // 更新情報を返却
+  res.send({
+    message : "チームの更新に成功しました。",
+    teamId : teamId,
+    teamName : updateTeamName,
+    content : updateContent,
+    updateUser : userId,
+    updateFunction : functionName,
+    updateDatetime : updateDate
+  });
 });
 
 /**
