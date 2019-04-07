@@ -292,6 +292,107 @@ router.put('/', async function(req, res, next) {
 });
 
 /**
+ * チームメンバー権限更新API.<br/>
+ * PUT(http://localhost:3000/api/v1/teams/users)
+ */
+router.put('/users', async function(req, res, next) {
+  console.log('PUT:v1/teams execution');
+
+  // tokenからuserIdを取得
+  let userId = await tokenUtil.getUserId(req, res);
+
+  // パラメータから登録情報を取得
+  let params = req.body;
+  // チームID
+  let teamId = params.teamId;
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
+  // チームIDのマスタ存在チェック
+  if (! await teamUtil.isTeamId(res, teamId)) {
+    return res.status(400).send({message : messageUtil.errMessage002("チーム")});
+  }
+  // チームの権限チェック
+  if (! await teamUtil.isTeamAuthority(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
+  }
+  // 機能名
+  let functionName = params.functionName;
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
+  // ユーザ情報
+  let users = params.users;
+  if (! validateUtil.isEmptyText(users, "ユーザ情報")) {
+    return res.status(400).send({message : messageUtil.errMessage001("ユーザ情報", "users")});
+  }
+  // 更新日時
+  let updateDate = new Date();
+
+  let resultUsers = [];
+  await Promise.all(
+    users.map(async function(user) {
+      // ユーザID
+      let targetUserId = user.userId;
+      if (! validateUtil.isEmptyText(targetUserId, "ユーザID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
+      }
+      // ユーザの存在チェック
+      if (! await userUtil.isUserId(res, userId)) {
+        return res.status(500).send({message : "存在しないユーザIDです。(userId:" + userId + ")"});
+      }
+      // 管理者権限
+      let administrator = user.administrator;
+      let administratorAuthority = false;
+      if (administrator != undefined && administrator != "" && administrator == 1) {
+        // 1の場合、管理者
+        administratorAuthority = true;
+        administrator = 1;
+      } else {
+        administrator = 0;
+      }
+
+      // チーム更新
+      let updTeamMember = await db.query(
+        `UPDATE sw_m_team_member 
+            SET administrator_authority = $1  
+              , update_user = $2 
+              , update_function = $3 
+              , update_datetime = $4 
+          WHERE team_id = $5
+            AND user_id = $6`
+        , [
+          administratorAuthority
+          , userId
+          , functionName
+          , updateDate
+          , teamId
+          , targetUserId
+        ]
+      );
+      if (updTeamMember.rowCount == 0) {
+        return res.status(500).send({message : "チームメンバーの更新に失敗しました。(teamId:" + teamId + ", userId:" + userId + ")"});
+      }
+
+      resultUsers.push({
+        'userId' : targetUserId,
+        'administrator' : administrator
+      });
+    })
+  );
+
+  // 更新情報を返却
+  res.send({
+    message : "チームメンバーの更新に成功しました。",
+    teamId : teamId,
+    users : resultUsers,
+    updateUser : userId,
+    updateFunction : functionName,
+    updateDatetime : updateDate
+  });
+});
+
+/**
  * チーム削除API.<br/>
  * 論理削除。<br/>
  * DELETE(http://localhost:3000/api/v1/teams)
