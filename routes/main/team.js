@@ -200,7 +200,7 @@ router.post('/', async function(req, res, next) {
 
 /**
  * チーム更新API.<br/>
- * PUT(http://localhost:3000/api/v1/teams)
+ * PUT(http://localhost:3000/api/v2/teams)
  */
 router.put('/', async function(req, res, next) {
   console.log('PUT:v1/teams execution');
@@ -293,10 +293,10 @@ router.put('/', async function(req, res, next) {
 
 /**
  * チームメンバー権限更新API.<br/>
- * PUT(http://localhost:3000/api/v1/teams/users)
+ * PUT(http://localhost:3000/api/v2/teams/users)
  */
 router.put('/users', async function(req, res, next) {
-  console.log('PUT:v1/teams execution');
+  console.log('PUT:v1/teams/users execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req, res);

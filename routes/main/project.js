@@ -210,10 +210,10 @@ router.post('/', async function(req, res, next) {
 
 /**
  * プロジェクト更新API.<br/>
- * PUT(http://localhost:3000/api/v1/projects)
+ * PUT(http://localhost:3000/api/v2/projects)
  */
 router.put('/', async function(req, res, next) {
-  console.log('PUT:v1/teams execution');
+  console.log('PUT:v1/projects execution');
 
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req, res);
@@ -343,6 +343,108 @@ router.put('/', async function(req, res, next) {
   });
 });
 
+/**
+ * プロジェクトユーザ更新API.<br/>
+ * PUT(http://localhost:3000/api/v2/projects/users)
+ */
+router.put('/users', async function(req, res, next) {
+  console.log('PUT:v1/projects/users execution');
+
+  // tokenからuserIdを取得
+  let userId = await tokenUtil.getUserId(req, res);
+
+  // パラメータから登録情報を取得
+  let params = req.body;
+  // チームID
+  let teamId = params.teamId;
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
+  // プロジェクトID
+  let projectId = params.projectId;
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
+  // 管理者チェック
+  if (! await projectUtil.hasAdmin(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")});
+  }
+  // 機能名
+  let functionName = params.functionName;
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
+  // ユーザ情報
+  let users = params.users;
+  if (! validateUtil.isEmptyText(users, "ユーザ情報")) {
+    return res.status(400).send({message : messageUtil.errMessage001("ユーザ情報", "users")});
+  }
+  // 更新日時
+  let updateDate = new Date();
+
+  let resultUsers = [];
+  await Promise.all(
+    users.map(async function(user) {
+      // ユーザID
+      let targetUserId = user.userId;
+      if (! validateUtil.isEmptyText(targetUserId, "ユーザID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
+      }
+      // ユーザの存在チェック
+      if (! await userUtil.isUserId(res, userId)) {
+        return res.status(400).send({message : "存在しないユーザIDです。(userId:" + userId + ")"});
+      }
+      // 管理者権限
+      let administrator = user.administrator;
+      let administratorAuthority = false;
+      if (administrator != undefined && administrator != "" && administrator == 1) {
+        // 1の場合、管理者
+        administratorAuthority = true;
+        administrator = 1;
+      } else {
+        administrator = 0;
+      }
+
+      // プロジェクト更新
+      let updProjectMember = await db.query(
+        `UPDATE sw_m_project_member 
+            SET administrator_authority = $1 
+              , update_user = $2 
+              , update_function = $3 
+              , update_datetime = $4 
+          WHERE project_id = $5
+            AND user_id = $6`
+        , [
+          administratorAuthority
+          , userId
+          , functionName
+          , updateDate
+          , projectId
+          , targetUserId
+        ]
+      );
+      if (updProjectMember.rowCount == 0) {
+        return res.status(500).send({message : "プロジェクトメンバーの更新に失敗しました。(teamId:" + teamId + ", projectId:" + projectId + ", userId:" + userId + ")"});
+      }
+
+      resultUsers.push({
+        'userId' : targetUserId,
+        'administrator' : administrator
+      });
+    })
+  );
+
+  // 更新情報を返却
+  res.send({
+    message : "プロジェクトメンバーの更新に成功しました。",
+    teamId : teamId,
+    projectId : projectId,
+    users : resultUsers,
+    updateUser : userId,
+    updateFunction : functionName,
+    updateDatetime : updateDate
+  });
+});
 
 /**
  * プロジェクト削除API.<br/>

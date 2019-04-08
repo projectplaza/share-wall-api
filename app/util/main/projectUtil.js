@@ -11,7 +11,7 @@ module.exports = {
    * @return true:存在する/false:存在しない
    */
   isProjectId: async function(res, projectId) {
-    console.log('SHARE-WALL-API-LOG : teamUtil - isProjectId()');
+    console.log('SHARE-WALL-API-LOG : projectUtil - isProjectId()');
 
     // パラメータチェック
     if (projectId == null) {
@@ -37,7 +37,7 @@ module.exports = {
    * @return true:所属する/false:所属しない
    */
   isProjectMember: async function(res, projectId, memberId) {
-    console.log('SHARE-WALL-API-LOG : teamUtil - isProjectMember()');
+    console.log('SHARE-WALL-API-LOG : projectUtil - isProjectMember()');
 
     // パラメータチェック
     if (projectId == null) {
@@ -54,6 +54,47 @@ module.exports = {
        WHERE project_id = $1 
        AND user_id =$2`
       , [projectId, memberId]
+    );
+    if (result != null && result.rows != null && result.rows[0].count > 0) {
+      return true;
+    }
+    return false;
+  },
+
+  /**
+   * ユーザがプロジェクトの管理者か判定します。
+   * @param {*} teamId チームID
+   * @param {*} projectId プロジェクトID
+   * @param {*} userId  ユーザID
+   * @return true:所属する/false:所属しない
+   */
+  hasAdmin: async function(teamId, projectId, userId) {
+    console.log('SHARE-WALL-API-LOG : projectUtil - isProjectMember()');
+
+    // パラメータチェック
+    if (teamId == null) {
+      return false;
+    }
+    if (projectId == null) {
+      return false;
+    }
+    if (userId == null) {
+      return false;
+    }
+
+    // マスタ検索
+    let result = await db.query(
+      `SELECT count(mpm.project_id)
+         FROM sw_m_team AS mt
+        INNER JOIN sw_m_project AS mp
+           ON mt.team_id = mp.team_id
+        INNER JOIN sw_m_project_member AS mpm
+           ON mp.project_id = mpm.project_id
+        WHERE mt.team_id = $1
+          AND mp.project_id = $2
+          AND mpm.user_id = $3
+          AND mpm.administrator_authority = true`
+      , [teamId, projectId, userId]
     );
     if (result != null && result.rows != null && result.rows[0].count > 0) {
       return true;
