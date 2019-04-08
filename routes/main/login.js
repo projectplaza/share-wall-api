@@ -57,12 +57,13 @@ router.post('/v1/login', async function(req, res, next) {
       // 登録日時
       let insertDate = new Date();
 
-      // トークンをDBへ登録
-      let nowTokens = await db.query('SELECT * FROM sw_t_token WHERE user_id = $1', [userId]);
-      if (nowTokens.rows && nowTokens.rows.length > 0) {
-      // トークン情報があれば削除
-      let delTokens = await db.query('DELETE FROM sw_t_token WHERE user_id = $1', [userId]);
-      }
+      // トークン複数保持を許可
+      // // トークンをDBへ登録
+      // let nowTokens = await db.query('SELECT * FROM sw_t_token WHERE user_id = $1', [userId]);
+      // if (nowTokens.rows && nowTokens.rows.length > 0) {
+      //   // トークン情報があれば削除
+      //   let delTokens = await db.query('DELETE FROM sw_t_token WHERE user_id = $1', [userId]);
+      // }
       let newTokens = await db.query(
         `INSERT INTO sw_t_token (token, user_id, create_user, create_function, create_datetime)
          VALUES ($1, $2, $3, $4, $5)`
