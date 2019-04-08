@@ -5,9 +5,16 @@
  * GET(http://localhost:3000/api/v1/projects/list)
  * プロジェクト取得API
  * GET(http://localhost:3000/api/v1/projects)
+ * プロジェクト登録API
  * POST(http://localhost:3000/api/v1/projects)
- * DELETE(http://localhost:3000/api/v1/projects)
+ * プロジェクトユーザ登録API
  * POST(http://localhost:3000/api/v1/projects/users)
+ * プロジェクト更新API
+ * PUT(http://localhost:3000/api/v1/projects)
+ * プロジェクトユーザ更新API
+ * PUT(http://localhost:3000/api/v1/projects/users)
+ * プロジェクト削除API
+ * DELETE(http://localhost:3000/api/v1/projects)
  */
 var express = require('express');
 var router = express.Router();
@@ -200,6 +207,142 @@ router.post('/', async function(req, res, next) {
             updateDatetime : insertDate
   });
 });
+
+/**
+ * プロジェクト更新API.<br/>
+ * PUT(http://localhost:3000/api/v1/projects)
+ */
+router.put('/', async function(req, res, next) {
+  console.log('PUT:v1/teams execution');
+
+  // tokenからuserIdを取得
+  let userId = await tokenUtil.getUserId(req, res);
+
+  // パラメータから登録情報を取得
+  let params = req.body;
+  // チームID
+  let teamId = params.teamId;
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
+  // チームIDのマスタ存在チェック
+  if (! await teamUtil.isTeamId(res, teamId)) {
+    return res.status(400).send({message : messageUtil.errMessage002("チーム")});
+  }
+  // チームの権限チェック
+  if (! await teamUtil.isTeamAuthority(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
+  }
+  // プロジェクトID
+  let projectId = params.projectId;
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
+  // プロジェクトIDのマスタ存在チェック
+  if (! await projectUtil.isProjectId(res, projectId)) {
+    return res.status(400).send({message : messageUtil.errMessage002("プロジェクト")});
+  }
+  // プロジェクトの権限チェック
+  if (! await projectUtil.isProjectMember(res, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクト")}); 
+  }
+  // プロジェクト名
+  let projectName = params.projectName;
+  // コンテンツ
+  let content = params.content;
+  // 公開フラグ
+  let openFlag = params.openFlag;
+  // 終了フラグ
+  let endFlag = params.endFlag;
+  // 機能名
+  let functionName = params.functionName;
+  if (! validateUtil.isEmptyText(functionName, "機能名")) {
+    return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+  }
+
+  // プロジェクト検索
+  let project = await db.query(
+    `SELECT * 
+     FROM sw_m_project
+     WHERE team_id = $1
+       AND project_id = $2`
+     , [teamId, projectId]
+  );
+  if (project.rowCount == 0) {
+    return res.status(500).send({message : "プロジェクト取得に失敗しました。(teamId:" + teamId + "projectId:" + projectId + ")"});
+  }
+
+  // 更新用プロジェクト名
+  let updateProjectName = project.rows[0].project_name;
+  if (validateUtil.isEmptyText(projectName, "プロジェクト名")) {
+    updateProjectName = projectName;
+  }
+  // 更新用コンテンツ
+  let updateContent = project.rows[0].content;
+  if (validateUtil.isEmptyText(content, "内容")) {
+    updateContent = content;
+  }
+  // 更新用公開フラグ
+  let updateOpenFlag = false;
+  if (openFlag != undefined && openFlag != "" && openFlag == 1) {
+    // 1の場合、公開
+    updateOpenFlag = true;
+  } else {
+    openFlag = 0;
+  }
+  // 更新用終了フラグ
+  let updateEndFlag = false;
+  if (endFlag != undefined && endFlag != "" && endFlag == 1) {
+    // 1の場合、終了
+    updateEndFlag = true;
+  } else {
+    // 1以外の場合、進行中
+    endFlag = 0;
+  }
+  // 更新日時
+  let updateDate = new Date();
+
+  // プロジェクト更新
+  let updProject = await db.query(
+    `UPDATE sw_m_project
+        SET project_name = $1 
+          , content = $2 
+          , open_flag = $3
+          , end_flag = $4
+          , update_user = $5 
+          , update_function = $6 
+          , update_datetime = $7 
+      WHERE team_id = $8
+        AND project_id = $9`
+    , [ updateProjectName
+      , updateContent
+      , updateOpenFlag
+      , updateEndFlag
+      , userId
+      , functionName
+      , updateDate
+      , teamId
+      , projectId]
+  );
+  if (updProject.rowCount == 0) {
+    return res.status(500).send({message : "プロジェクト更新に失敗しました。(teamId:" + teamId + "projectId:" + projectId + ")"});
+  }
+
+  // 更新情報を返却
+  res.send({
+    message : "プロジェクトの更新に成功しました。",
+    teamId : teamId,
+    projectId : projectId,
+    projectName : updateProjectName,
+    content : updateContent,
+    openFlag : openFlag,
+    endFlag : endFlag,
+    updateUser : userId,
+    updateFunction : functionName,
+    updateDatetime : updateDate
+  });
+});
+
 
 /**
  * プロジェクト削除API.<br/>
