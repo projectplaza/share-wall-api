@@ -61,5 +61,39 @@ module.exports = {
       return false;
     }
     return true;
+  },
+
+  /**
+   * ユーザがチームのメンバーか判定します。
+   * @param {*} teamId チームID
+   * @param {*} userId  ユーザID
+   * @return true:所属する/false:所属しない
+   */
+  hasMember: async function(teamId, userId) {
+    console.log('SHARE-WALL-API-LOG : teamUtil - hasMember()');
+
+    // パラメータチェック
+    if (teamId == null) {
+      return false;
+    }
+    if (userId == null) {
+      return false;
+    }
+
+    // マスタ検索
+    let result = await db.query(
+      `SELECT count(mtm.team_id)
+         FROM sw_m_team AS mt
+        INNER JOIN sw_m_team_member AS mtm
+           ON mt.team_id = mtm.team_id
+        WHERE mt.team_id = $1
+          AND mtm.user_id = $2`
+      , [teamId, userId]
+    );
+    if (result != null && result.rows != null && result.rows[0].count > 0) {
+      return true;
+    }
+    return false;
   }
+
 }

@@ -47,33 +47,35 @@ router.get('/list', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームの存在チェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(400).send({message : messageUtil.errMessage002("チーム")}); 
-  }
   // チームの権限チェック
-  if (! await teamUtil.isTeamAuthority(teamId, userId)) {
-    return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
+  if (! await teamUtil.hasMember(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("チームメンバー")}); 
+  }
+  // 終了フラグ
+  let endFlag = params.endFlag;
+  // 検索用終了フラグ
+  let selectEndFlag = false;
+  if (endFlag != undefined && endFlag != "" && endFlag == 1) {
+    // 1の場合、終了
+    selectEndFlag = true;
+  } else {
+    // 1以外の場合、進行中
+    endFlag = 0;
   }
 
-  // メンバー、管理者権限を持つプロジェクトの一覧を取得
+  // プロジェクトの一覧を取得
   let projects = await db.query(
-    `SELECT pj.team_id, pj.project_id, pj.project_name, pj."content"
-     FROM sw_m_project pj
-     INNER JOIN (
-      (SELECT project_id, user_id
-       FROM sw_m_project_member
-       WHERE user_id = $1
-       AND user_authority = true)
-      UNION
-      (SELECT project_id, user_id
-       FROM sw_m_project_member
-       WHERE user_id = $1
-       AND administrator_authority = true)
-      ) AS mypj
-    ON pj.project_id = mypj.project_id
-    WHERE pj.team_id = $2`
-    , [userId, teamId]
+    `SELECT pj.team_id
+          , pj.project_id
+          , pj.project_name
+          , pj."content"
+       FROM sw_m_project pj
+      INNER JOIN sw_m_project_member pjm
+         ON pj.project_id = pjm.project_id
+      WHERE pj.team_id = $1
+        AND pj.end_flag = $2
+        AND pjm.user_id = $3`
+    , [teamId, selectEndFlag, userId]
   );
   if (!projects.rows || projects.rows.length == 0) {
     // プロジェクトが存在しない場合、空のリストを返却
@@ -86,7 +88,9 @@ router.get('/list', async function(req, res, next) {
       teamId : row.team_id,
       projectId : row.project_id,
       projectName : row.project_name,
-      content : row.content})
+      content : row.content,
+      endFlag : endFlag
+    })
   });
   res.send(resProjects);
 });
