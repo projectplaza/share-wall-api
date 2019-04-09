@@ -96,7 +96,7 @@ router.get('/list', async function(req, res, next) {
 });
 
 /**
- * プロジェクト情報取得API.<br/>
+ * プロジェクト取得API.<br/>
  * GET(http://localhost:3000/api/v1/projects)
  */
 router.get('/', async function(req, res, next) {
@@ -106,37 +106,93 @@ router.get('/', async function(req, res, next) {
 
   // パラメータ取得
   let params = req.query;
+  // チームID
+  let teamId = params.teamId;
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
+  // プロジェクトの権限チェック
+  if (! projectUtil.hasMember(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")}); 
+  }
 
   // プロジェクト検索
-  let projects = await db.query("SELECT * FROM sw_m_project WHERE project_id = $1 ", [projectId]);
+  let projects = await db.query(
+    `SELECT * 
+       FROM sw_m_project 
+      WHERE team_id = $1
+        AND project_id = $2`
+    , [teamId, projectId]
+  );
   if (! validateUtil.isQueryResult(projects, "プロジェクト")) {
     return res.status(400).send({message : messageUtil.errMessage002("プロジェクト")});
   }
 
-  // プロジェクトメンバー検索
-  // メンバー0でも返却
-  let members = await db.query("SELECT * FROM sw_m_project_member AS smtm INNER JOIN sw_m_user AS smu ON smtm.user_id = smu.user_id WHERE smtm.project_id = $1 ", [projectId]);
+  projects.rows.map(async function(project) {
 
-  let resMember = [];
-  members.rows.forEach(function(row) {
-    resMember.push({userId : row.user_id,
-                    userName : row.user_name,
-                    administratorAuthority : row.administrator_authority,
-                    userAuthority : row.user_authority});
-  });
+    // メンバー取得
+    let resultMembers = await findMember(teamId, projectId);
 
-  // 検索結果を返却
-  res.send({projectId : projects.rows[0].project_id,
-            projectName : projects.rows[0].project_name,
-            content : projects.rows[0].content,
-            members : resMember
-  });
+    // 終了フラグ
+    let endFlag = 0;
+    if (project.end_flag) {
+      endFlag = 1;
+    }
+    // プロジェクト情報を返却
+    res.send( {
+      projectId : project.project_id,
+      projectName : project.project_name,
+      content : project.content,
+      endFlag : endFlag,
+      members : resultMembers
+    });
+  })
 });
+/**
+ * メンバー情報取得処理
+ * @param {*} teamId 
+ * @param {*} projectId 
+ */
+async function findMember(teamId, projectId) {
+  console.log('project - findMember()');
+
+  // メンバー検索
+  let members = await db.query(
+    `SELECT * 
+       FROM sw_m_project_member AS mtm
+      INNER JOIN sw_m_user AS mu
+         ON mtm.user_id = mu.user_id
+      WHERE mtm.team_id = $1
+        AND mtm.project_id = $2`
+    , [teamId, projectId]
+  );
+  if (! validateUtil.isQueryResult(members, "プロジェクトメンバー")) {
+      // 検索結果が存在しない場合、空のリストを設定
+      return [];
+  } else {
+      // メンバー情報を設定
+      let resultMemberss = [];
+      members.rows.forEach(async function(row) {
+        // 管理者権限
+        let administrator = 0;
+        if (row.administrator_authority) {
+          administrator = 1;
+        }
+        resultMemberss.push({
+              "userId" : row.user_id
+              , "userName" : row.user_name
+              , "administrator" : administrator
+          });
+      });
+      return resultMemberss;
+  }
+  
+};
 
 /**
  * プロジェクト登録API.<br/>
