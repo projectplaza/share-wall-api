@@ -216,25 +216,45 @@ router.post('/', async function(req, res, next) {
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
+  // プロジェクトIDの利用可能チェック
+  if (await projectUtil.isProjectId(res, projectId)) {
+    return res.status(400).send({message : "登録済みのプロジェクトIDです。(projectId:" + projectId + ")"});
+  }
   // プロジェクト名
   let projectName = params.projectName;
   if (! validateUtil.isEmptyText(projectName, "プロジェクト名")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクト名", "projectName")});
   }
-
   // コンテンツ
   let content = params.content;
+  // 公開フラグ
+  let openFlag = params.openFlag;
+  // 終了フラグ
+  let endFlag = params.endFlag;
   // 機能名
   let functionName = params.functionName;
   if (! validateUtil.isEmptyText(functionName, "機能名")) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
 
-  // プロジェクトIDの利用可能チェック
-  if (await projectUtil.isProjectId(res, projectId)) {
-    return res.status(500).send({message : "登録済みのプロジェクトIDです。(projectId:" + projectId + ")"});
+  // 登録用公開フラグ
+  let selectOpenFlag = false;
+  if (openFlag != undefined && openFlag != "" && openFlag == 1) {
+    // 1の場合、公開
+    selectOpenFlag = true;
+  } else {
+    // 1以外の場合、非公開
+    openFlag = 0;
   }
-
+  // 登録用終了フラグ
+  let selectEndFlag = false;
+  if (endFlag != undefined && endFlag != "" && endFlag == 1) {
+    // 1の場合、終了
+    selectEndFlag = true;
+  } else {
+    // 1以外の場合、進行中
+    endFlag = 0;
+  }
   // 登録日時
   let insertDate = new Date();
 
@@ -245,26 +265,44 @@ router.post('/', async function(req, res, next) {
       , project_id
       , project_name
       , content
+      , open_flag
+      , end_flag
       , create_user
       , create_function
       , create_datetime
       , update_user
       , update_function
       , update_datetime) 
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
-    , [teamId, projectId, projectName, content, userId, functionName, insertDate, userId, functionName, insertDate]);
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`
+    , [
+      teamId
+      , projectId
+      , projectName
+      , content
+      , selectOpenFlag
+      , selectEndFlag
+      , userId
+      , functionName
+      , insertDate
+      , userId
+      , functionName
+      , insertDate]);
 
   // 登録情報を返却
-  res.send({teamId : teamId,
-            projectId : projectId,
-            projectName : projectName,
-            content : content,
-            createUser : userId,
-            createFunction : functionName,
-            createDatetime : insertDate,
-            updateUser : userId,
-            updateFunction : functionName,
-            updateDatetime : insertDate
+  res.send({
+    message : "プロジェクトの登録に成功しました。",
+    teamId : teamId,
+    projectId : projectId,
+    projectName : projectName,
+    content : content,
+    openFlag : openFlag,
+    endFlag : endFlag,
+    createUser : userId,
+    createFunction : functionName,
+    createDatetime : insertDate,
+    updateUser : userId,
+    updateFunction : functionName,
+    updateDatetime : insertDate
   });
 });
 
