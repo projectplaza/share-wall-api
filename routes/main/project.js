@@ -117,8 +117,8 @@ router.get('/', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクトの権限チェック
-  if (! projectUtil.hasMember(teamId, projectId, userId)) {
-    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")}); 
+  if (! await projectUtil.hasAdmin(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")}); 
   }
 
   // プロジェクト検索

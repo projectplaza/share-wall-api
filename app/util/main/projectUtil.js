@@ -66,7 +66,7 @@ module.exports = {
    * @param {*} teamId チームID
    * @param {*} projectId プロジェクトID
    * @param {*} userId  ユーザID
-   * @return true:所属する/false:所属しない
+   * @return true:管理者/false:管理者でない
    */
   hasAdmin: async function(teamId, projectId, userId) {
     console.log('SHARE-WALL-API-LOG : projectUtil - hasAdmin()');
@@ -107,7 +107,7 @@ module.exports = {
    * @param {*} teamId チームID
    * @param {*} projectId プロジェクトID
    * @param {*} userId  ユーザID
-   * @return true:所属する/false:所属しない
+   * @return true:メンバーfalse:メンバーでない
    */
   hasMember: async function(teamId, projectId, userId) {
     console.log('SHARE-WALL-API-LOG : projectUtil - hasMember()');

@@ -89,6 +89,10 @@ router.get('/', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
+  // チームの管理者権限チェック
+  if (! await teamUtil.hasAdmin(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("チーム管理者")}); 
+  }
 
   // チーム検索
   let teams = await db.query(
@@ -215,14 +219,11 @@ router.put('/', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームIDのマスタ存在チェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(400).send({message : messageUtil.errMessage002("チーム")});
+  // チームの管理者権限チェック
+  if (! await teamUtil.hasAdmin(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("チーム管理者")}); 
   }
-  // チームの権限チェック
-  if (! await teamUtil.isTeamAuthority(teamId, userId)) {
-    return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
-  }
+
   // チーム名
   let teamName = params.teamName;
   // コンテンツ
@@ -308,13 +309,9 @@ router.put('/users', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームIDのマスタ存在チェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(400).send({message : messageUtil.errMessage002("チーム")});
-  }
-  // チームの権限チェック
-  if (! await teamUtil.isTeamAuthority(teamId, userId)) {
-    return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
+  // チームの管理者権限チェック
+  if (! await teamUtil.hasAdmin(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("チーム管理者")}); 
   }
   // 機能名
   let functionName = params.functionName;
@@ -402,19 +399,14 @@ router.delete('/', async function(req, res, next) {
   // tokenからuserIdを取得
   let userId = await tokenUtil.getUserId(req, res);
 
-
   // パラメータ取得
   let teamId = req.body.teamId;
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームIDのマスタ存在チェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(400).send({message : messageUtil.errMessage002("チーム")});
-  }
-  // チームの権限チェック
-  if (! await teamUtil.isTeamAuthority(teamId, userId)) {
-    return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
+  // チームの管理者権限チェック
+  if (! await teamUtil.hasAdmin(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("チーム管理者")}); 
   }
 
   // チーム削除
