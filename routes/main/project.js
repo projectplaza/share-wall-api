@@ -552,17 +552,25 @@ router.put('/users', async function(req, res, next) {
 router.delete('/', async function(req, res, next) {
   console.log('DELETE:v1/projects execution');
 
+  // tokenからuserIdを取得
+  let userId = await tokenUtil.getUserId(req, res);
+
   // パラメータ取得
-  let projectId = req.body.projectId;
+  let params = req.body;
+  // チームID
+  let teamId = params.teamId;
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
+  // プロジェクトID
+  let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-  // プロジェクトIDのマスタ存在チェック
-  if (! await projectUtil.isProjectId(res, projectId)) {
-    return res.status(400).send({message : messageUtil.errMessage002("プロジェクト")});
+  // 管理者チェック
+  if (await projectUtil.hasAdmin(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")});
   }
-  // プロジェクトの権限チェック
-  // TODO: プロジェクトの権限チェック
 
   // プロジェクト削除
   let projectResult = await db.query(
