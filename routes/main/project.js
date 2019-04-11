@@ -522,7 +522,7 @@ router.put('/users', async function(req, res, next) {
         ]
       );
       if (updProjectMember.rowCount == 0) {
-        return res.status(500).send({message : "プロジェクトメンバーの更新に失敗しました。(teamId:" + teamId + ", projectId:" + projectId + ", userId:" + userId + ")"});
+        return res.status(500).send({message : "プロジェクトメンバーの更新に失敗しました。(teamId:" + teamId + ", projectId:" + projectId + ", userId:" + targetUserId + ")"});
       }
 
       resultUsers.push({
@@ -587,20 +587,21 @@ router.delete('/', async function(req, res, next) {
 router.post('/users', async function(req, res, next) {
   console.log('POST:v1/projects/users execution');
   // tokenからuserIdを取得
-  let insertUserId = await tokenUtil.getUserId(req, res);
+  let userId = await tokenUtil.getUserId(req, res);
 
   // パラメータから登録情報を取得
   let params = req.body;
+  // チームID
+  let teamId = params.teamId;
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
+  // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-
-  // プロジェクトの存在チェック
-  if (! await projectUtil.isProjectId(res, projectId)) {
-    return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-  }
-
+  // 管理者チェックは実施しない
   // 機能名
   let functionName = params.functionName;
   if (! validateUtil.isEmptyText(functionName, "機能名")) {
@@ -612,81 +613,114 @@ router.post('/users', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("ユーザ情報", "users")});
   }
 
+  // 更新日時
+  let insertDate = new Date();
 
-  let result = [];
-  for (let i=0; i<users.length; i++) {
-    let rowParam = users[i];
-    // ユーザID
-    let userId = rowParam.userId;
-    if (! validateUtil.isEmptyText(userId, "ユーザID")) {
-      return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
-    }
-  
+  let resultUsers = [];
+  await Promise.all(
+    users.map(async function(user) {
+      // ユーザID
+      let targetUserId = user.userId;
+      if (! validateUtil.isEmptyText(targetUserId, "ユーザID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
+      }
+      // ユーザの存在チェック
+      if (! await userUtil.isUserId(res, targetUserId)) {
+        return res.status(400).send({message : "存在しないユーザIDです。(userId:" + targetUserId + ")"});
+      }
+      // ユーザの登録済みチェック
+      if (await projectUtil.isProjectMember(res, projectId, targetUserId)) {
+        return res.status(400).send({message : "登録済みのユーザIDです。(userId:" + targetUserId + ")"});
+      }
+      // 管理者権限
+      let administrator = user.administrator;
 
-    // メンバーの存在チェック
-   if (! await userUtil.isUserId(res, userId)) {
-    return res.status(500).send({message : "存在しないユーザIDです。(userId:" + userId + ")"});
-   }
+      // 登録処理
+      let insertResult = await insertProjectMember(
+        teamId
+        , projectId
+        , targetUserId
+        , administrator
+        , userId
+        , functionName
+        , insertDate);
+        if (insertResult == null) {
+          return res.status(500).send({message : "プロジェクトメンバーの登録に失敗しました。(teamId:" + teamId + ", projectId:" + projectId + ", userId:" + targetUserId + ")"});
+        }  
 
-    // メンバー権限
-    let userAuthority = rowParam.userAuthority;
-    if (! validateUtil.isEmptyBool(userAuthority, "メンバー権限")) {
-      return res.status(400).send({message : messageUtil.errMessage001("メンバー権限", "userAuthority")});
-    }
-  
-    // 管理者権限
-    let administratorAuthority = rowParam.administratorAuthority;
-    if (! validateUtil.isEmptyBool(administratorAuthority, "管理者権限")) {
-      return res.status(400).send({message : messageUtil.errMessage001("管理者権限", "administratorAuthority")});
-    }
-
-    // プロジェクトメンバーの存在チェック
-    if (await projectUtil.isProjectMember(res, projectId, userId)) {
-      return res.status(500).send({message : "登録済みのデータです。(projectId:" + projectId + ", userId:" + userId + ")"});
-    }
-
-    // 登録処理
-    let insertResult = await insertProjectMember(projectId, userId, userAuthority, administratorAuthority, insertUserId, functionName);
-    result.push(insertResult);
-  }
-  res.send(result);
+      resultUsers.push(insertResult);
+    })
+  );
+  // 登録情報を返却
+  res.send({
+    message : "プロジェクトメンバーの登録に成功しました。",
+    teamId : teamId,
+    projectId : projectId,
+    users : resultUsers,
+    createUser : userId,
+    createFunction : functionName,
+    createDatetime : insertDate
+  });
 });
 
 /**
  * プロジェクトメンバの登録処理
+ * @param {*} teamId チームID
  * @param {*} projectId プロジェクトID
  * @param {*} userId ユーザID
- * @param {*} userAuthority ユーザ権限
- * @param {*} administratorAuthority 管理者権限
+ * @param {*} administrator 管理者
  * @param {*} insertUserId 登録ユーザID
  * @param {*} functionName 登録機能名
+ * @param {*} insertDate 登録日時
  */
-async function insertProjectMember(projectId, userId, userAuthority, administratorAuthority, insertUserId, functionName) {
+async function insertProjectMember(teamId, projectId, userId, administrator, insertUserId, functionName, insertDate) {
   console.log('project - insertProjectMember()');
-  // 登録日時
-  let insertDate = new Date();
+
+  // 管理者
+  let administratorAuthority = false;
+  if (administrator != undefined && administrator != "" && administrator == 1) {
+    // 1の場合、管理者
+    administratorAuthority = true;
+    administrator = 1;
+  } else {
+    administrator = 0;
+  }
 
   // プロジェクト メンバー登録
   let result = await db.query(
-    'INSERT INTO sw_m_project_member (project_id, user_id, user_authority, administrator_authority, create_user, create_function, create_datetime, update_user, update_function, update_datetime) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)'
-    , [projectId, userId, userAuthority, administratorAuthority, insertUserId, functionName, insertDate, insertUserId, functionName, insertDate]);
-
+    `INSERT INTO sw_m_project_member (
+      team_id
+      , project_id
+      , user_id
+      , administrator_authority
+      , create_user
+      , create_function
+      , create_datetime
+      , update_user
+      , update_function
+      , update_datetime)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
+    , [
+      teamId
+      , projectId
+      , userId
+      , administratorAuthority
+      , insertUserId
+      , functionName
+      , insertDate
+      , insertUserId
+      , functionName
+      , insertDate
+    ]
+  );
   if (result == null || result.rowCount == 0) {
-    // 存在しない場合、エラー
-    return res.status(500).send({message : "登録に失敗しました。(projectId:" + projectId + ", userId:" + userId + ")"});
+    // 存在しない場合、nullを返却
+    return null;
   }
-  console.log(result);
 
-  return {userId : userId,
-    projectId : projectId,
-    userAuthority : userAuthority,
-    administratorAuthority : administratorAuthority,
-    createUser : userId,
-    createFunction : functionName,
-    createDatetime : insertDate,
-    updateUser : userId,
-    updateFunction : functionName,
-    updateDatetime : insertDate
+  return {
+    userId : userId,
+    administrator : administrator
   };
 }
 
