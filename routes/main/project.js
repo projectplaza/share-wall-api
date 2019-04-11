@@ -211,6 +211,11 @@ router.post('/', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
+  // チームの権限チェック
+  if (! await teamUtil.hasMember(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")}); 
+  }
+
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
@@ -323,27 +328,16 @@ router.put('/', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームIDのマスタ存在チェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(400).send({message : messageUtil.errMessage002("チーム")});
-  }
-  // チームの権限チェック
-  if (! await teamUtil.isTeamAuthority(teamId, userId)) {
-    return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
-  }
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-  // プロジェクトIDのマスタ存在チェック
-  if (! await projectUtil.isProjectId(res, projectId)) {
-    return res.status(400).send({message : messageUtil.errMessage002("プロジェクト")});
-  }
   // プロジェクトの権限チェック
-  if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-    return res.status(400).send({message : messageUtil.errMessage003("プロジェクト")}); 
+  if (! await projectUtil.hasAdmin(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")}); 
   }
+
   // プロジェクト名
   let projectName = params.projectName;
   // コンテンツ
@@ -463,7 +457,7 @@ router.put('/users', async function(req, res, next) {
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-  // 管理者チェック
+  // プロジェクトの権限チェック
   if (! await projectUtil.hasAdmin(teamId, projectId, userId)) {
     return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")});
   }
@@ -568,7 +562,7 @@ router.delete('/', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // 管理者チェック
-  if (await projectUtil.hasAdmin(teamId, projectId, userId)) {
+  if (! await projectUtil.hasAdmin(teamId, projectId, userId)) {
     return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")});
   }
 
@@ -576,13 +570,17 @@ router.delete('/', async function(req, res, next) {
   let projectResult = await db.query(
     'DELETE FROM sw_m_project WHERE project_id = $1'
     , [projectId]);
-  console.log(projectResult.rowCount);
+  if (projectResult.rowCount <= 0) {
+    return res.status(500).send({message : "プロジェクトの削除に失敗しました。(teamId:" + teamId + ", projectId:" + projectId + ")"});
+  }  
 
   // プロジェクトメンバー削除
   let memberResult = await db.query(
     'DELETE FROM sw_m_project_member WHERE project_id = $1'
     , [projectId]);
-  console.log(memberResult.rowCount);
+  if (memberResult.rowCount <= 0) {
+    return res.status(500).send({message : "プロジェクトメンバーの削除に失敗しました。(teamId:" + teamId + ", projectId:" + projectId + ")"});
+  }  
 
   res.send({message : "プロジェクトの削除に成功しました。"
     ,projectId : projectId});
@@ -604,12 +602,16 @@ router.post('/users', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
+  // チームの権限チェック
+  if (! await teamUtil.hasMember(teamId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")}); 
+  }
+
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-  // 管理者チェックは実施しない
   // 機能名
   let functionName = params.functionName;
   if (! validateUtil.isEmptyText(functionName, "機能名")) {
