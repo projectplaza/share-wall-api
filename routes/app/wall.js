@@ -1639,4 +1639,96 @@ async function deleteTask(boardId, taskId) {
     return true;
 };
 
+/**
+ * コメント削除API（単体）
+ * DELETE(http://localhost:3000/api/v1/wall/comment)
+ */
+router.delete('/comment', async function(req, res, next) {
+    console.log('DELETE:v1/wall/comment execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータから登録情報を取得
+    let params = req.body;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // プロジェクト所属チェック
+    if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+      return res.status(400).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+    }
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // ボードIDのマスタチェック
+    if (! await wallUtil.isBoardId(boardId)) {
+      return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
+    }
+    // タスクID
+    let taskId = params.taskId;
+    if (! validateUtil.isEmptyText(taskId, "タスクID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
+    }
+    // タスクIDのマスタチェック
+    if (! await wallUtil.isTaskId(boardId, taskId)) {
+      return res.status(400).send({message : "タスクIDが存在しません。(taskId:" + taskId + ")"});
+    }
+    // コメントID
+    let commentId = params.commentId;
+    if (! validateUtil.isEmptyText(commentId, "コメントID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("コメントID", "commentId")});
+    }
+    // コメントIDのマスタチェック
+    if (! await wallUtil.isCommentId(boardId, taskId, commentId)) {
+      return res.status(400).send({message : "コメントIDが存在しません。(commentId:" + commentId + ")"});
+    }
+  
+    // コメント削除処理
+    if (await deleteComment(boardId, taskId, commentId)) {
+      res.send({
+        message : "コメントの削除に成功しました。"
+        , teamId : teamId
+        , projectId : projectId
+        , boardId : boardId
+        , taskId : taskId
+        , commentId : commentId
+      });
+    } else {
+      res.status(500).send({
+        message : "コメントの削除に失敗しました。(boardId:" + boardId + ", taskId:" + taskId + ", commentId:" + commentId + ")"
+      });
+    }
+});
+/** 
+ * コメント削除処理.
+ */
+async function deleteComment(boardId, taskId, commentId) {
+    console.log('wall - deleteComment()');
+
+    // コメント削除
+    let delComment = await db.query(
+        `DELETE FROM sw_t_wall_comment
+          WHERE board_id = $1
+            AND task_id = $2
+            AND comment_id = $3`
+         , [boardId, taskId, commentId]
+    );
+    if (delComment.rowCount == 0) {
+        // 失敗
+        return false;
+    }
+
+    return true;
+};
+
 module.exports = router;

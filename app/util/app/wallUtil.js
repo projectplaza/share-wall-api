@@ -84,6 +84,35 @@ module.exports = {
   },
 
   /**
+   * マスタに存在するコメントIDか判定します。
+   * @param {*} boardId ボードID
+   * @param {*} taskId タスクID
+   * @param {*} commentId コメントID
+   * @return true:存在する/false:存在しない
+   */
+  isCommentId: async function(boardId, taskId, commentId) {
+    console.log('SHARE-WALL-API-LOG : wallUtil - isCommentId()');
+    // パラメータチェック
+    if (commentId == null) {
+      return false;
+    }
+
+    // マスタ検索
+    let result = await db.query(
+      `SELECT count(comment_id)
+         FROM sw_t_wall_comment
+        WHERE board_id = $1
+          AND task_id = $2
+          AND comment_id = $3`
+      , [boardId, taskId, commentId]
+    );
+    if (result != null && result.rows != null && result.rows[0].count > 0) {
+      return true;
+    }
+    return false;
+  },
+
+  /**
    * 最大のタスクIDを取得します。
    */
   getMaxTaskId: async function(boardId) {
