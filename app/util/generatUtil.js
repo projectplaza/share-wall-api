@@ -141,5 +141,23 @@ module.exports = {
 
     // 最大値＋１を返却
     return maxId + 1;
+  },
+
+  /**
+   * ウォール用の利用可能なコメントIDを生成し返却します。<br>
+   * コメントID:タスク内で一意なキー
+   * @param {*} res レスポンス
+   * @param {*} boardId ボードID
+   * @param {*} taskId タスクID
+   * @return {*} コメントID
+   */
+  getWallCommentId: async function(boardId, taskId) {
+    console.log('SHARE-WALL-API-LOG : generatUtil - getWallCommentId()');
+
+    let maxId = await wallUtil.getMaxCommentId(boardId, taskId);
+    console.log(maxId)
+
+    // 最大値＋１を返却
+    return maxId + 1;
   }
 }

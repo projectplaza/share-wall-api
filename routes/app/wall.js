@@ -36,6 +36,13 @@
  * タスク削除API（単体）
  * DELETE(http://localhost:3000/api/v1/wall/task)
  * 
+ * コメント一覧取得API（複数）
+ * GET(http://localhost:3000/api/v1/wall/comment/list)
+ * コメント登録API（単体）
+ * POST(http://localhost:3000/api/v1/wall/comment)
+ * コメント削除API（単体）
+ * DELETE(http://localhost:3000/api/v1/wall/comment)
+ * 
  */
 var express = require('express');
 var router = express.Router();
@@ -780,6 +787,97 @@ router.post('/task', async function(req, res, next) {
         assignUser : assignUser,
         startDate : startDate,
         deadline : deadline,
+        createUser : userId,
+        createFunction : functionName,
+        createDatetime : insertDate
+    });
+});
+
+/**
+ * コメント登録API（単体）
+ * POST(http://localhost:3000/api/v1/wall/comment)
+ */
+router.post('/comment', async function(req, res, next) {
+    console.log('POST:v1/wall/comment execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+
+    // パラメータから登録情報を取得
+    let params = req.body;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // プロジェクトの権限チェック
+    if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+        return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")});
+    }
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // ボードIDのマスタチェック
+    if (! await wallUtil.isBoardId(boardId)) {
+        return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
+    }
+    // タスクID
+    let taskId = params.taskId;
+    if (! validateUtil.isEmptyText(taskId, "タスクID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
+    }
+    // タスクIDのマスタチェック
+    if (! await wallUtil.isTaskId(boardId, taskId)) {
+      return res.status(400).send({message : "タスクIDが存在しません。(taskId:" + taskId + ")"});
+    }
+    // コメント内容
+    let content = params.content;
+    if (! validateUtil.isEmptyText(content, "内容")) {
+        return res.status(400).send({message : messageUtil.errMessage001("内容", "content")});
+    }
+    // 機能名
+    let functionName = params.functionName;
+    if (! validateUtil.isEmptyText(functionName, "機能名")) {
+        return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+    }
+
+    // コメントID（連番）を生成
+    let commentId = await generatUtil.getWallCommentId(boardId, taskId);
+    let orderNo = 0;
+  
+    // 登録日時
+    let insertDate = new Date();
+  
+    // コメント登録
+    let newComment = await db.query(
+        `INSERT INTO sw_t_wall_comment (
+            board_id,
+            task_id,
+            comment_id,
+            content,
+            create_user,
+            create_function,
+            create_datetime,
+            update_user,
+            update_function,
+            update_datetime)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $5, $6, $7)`
+        , [boardId, taskId, commentId, content, 
+             userId, functionName, insertDate]);
+            
+    // 登録情報を返却
+    res.send({
+        boardId : boardId,
+        taskId : taskId,
+        commentId : commentId,
+        content : content,
         createUser : userId,
         createFunction : functionName,
         createDatetime : insertDate

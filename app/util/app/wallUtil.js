@@ -107,5 +107,34 @@ module.exports = {
       // 取得できない場合は0を返却
       return 0;
     }
+  },
+
+  /**
+   * 最大のコメントIDを取得します。
+   * @param boardId ボードID
+   * @param taskId タスクID
+   */
+  getMaxCommentId: async function(boardId, taskId) {
+    console.log('SHARE-WALL-API-LOG : wallUtil - getMaxCommentId()');
+    // パラメータチェック
+    if (boardId == null || taskId == null) {
+      return false;
+    }
+
+    // コメントの最大IDを取得
+    let result = await db.query(
+      `SELECT max(comment_id)
+         FROM sw_t_wall_comment
+        WHERE board_id = $1
+          AND task_id = $2`
+      , [boardId, taskId]
+    );
+    if (result != null && result.rows != null) {
+      // 最大ID値を返却
+      return result.rows[0].max;
+    } else {
+      // 取得できない場合は0を返却
+      return 0;
+    }
   }
 }
