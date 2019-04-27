@@ -16,14 +16,14 @@ module.exports = {
   },
 
   /**
-   * 引数の文字列に対してundefined,空文字判定を行う。
-   * @param {*} val 検証する文字列
-   * @returns true:文字列あり/false:文字列なし（undefinedまたは空文字）
+   * 引数の数値に対してundefined判定を行う。
+   * @param {*} val 検証する数値
+   * @returns true:文字列あり/false:文字列なし（undefined）
    */
-  isEmptyText: function(val, logicalName) {
-    console.log('validateUtil - isEmptyText(' + logicalName + ':' + val +')');
+  isEmptyNumber: function(val, logicalName) {
+    console.log('validateUtil - isEmptyNumber(' + logicalName + ':' + val +')');
     // 値の検証
-    if (val == undefined || val == "") {
+    if (val == undefined || val == null) {
       return false;
     }
     return true;

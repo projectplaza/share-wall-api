@@ -465,6 +465,110 @@ router.get('/task', async function(req, res, next) {
     res.send(result);
 });
 
+/**
+ * コメント一覧取得API（複数）
+ * GET(http://localhost:3000/api/v1/wall/comment/list)
+ */
+router.get('/comment/list', async function(req, res, next) {
+    console.log('GET:v1/wall/comment/list execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータ取得
+    let params = req.query;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // プロジェクトID
+    let projectId = params.projectId;
+    if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+    }
+    // プロジェクトIDのマスタチェック
+    if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+        return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")});
+    }
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // ボードIDのマスタチェック
+    if (! await wallUtil.isBoardId(boardId)) {
+        return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
+    }
+    // タスクID
+    let taskId = params.taskId;
+    if (! validateUtil.isEmptyText(taskId, "タスクID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
+    }
+    // タスクIDのマスタチェック
+    if (! await wallUtil.isTaskId(boardId, taskId)) {
+        return res.status(400).send({message : "タスクIDが存在しません。(taskId:" + taskId + ")"});
+    }
+    // リミット
+    let limit = params.limit;
+    if (! validateUtil.isEmptyNumber(limit, "リミット")) {
+        // 設定なしの場合は10
+        limit = 10;
+    }
+    // オフセット
+    let offset = params.offset;
+    if (! validateUtil.isEmptyNumber(offset, "オフセット")) {
+        // 設定なしの場合は0
+        offset = 0;
+    }
+  
+    // 検索
+    let comments = await findComment(boardId, taskId, limit, offset);
+
+    // 検索結果
+    let result = {
+        "teamId" : teamId
+        , "projectId" : projectId
+        , "boardId" : boardId
+        , "taskId" : taskId
+        , "coments" : comments
+    };
+    res.send(result);
+});
+/**
+ * コメント情報取得処理
+ * @param {*} boardId 
+ * @param {*} taskId 
+ * @param {*} limit 
+ * @param {*} offset 
+ */
+async function findComment(boardId, taskId, limit, offset) {
+    console.log('wall - findComment()');
+    // コメント検索
+    let comments = await db.query(
+        `SELECT comment_id,"content"
+           FROM sw_t_wall_comment comment
+          WHERE comment.board_id = $1
+            AND comment.task_id = $2
+          ORDER BY comment_id ASC
+          LIMIT $3
+         OFFSET $4`,
+        [boardId, taskId, limit, offset]);
+    if (!comments.rows || comments.rows.length == 0) {
+        // 検索結果が存在しない場合、空のリストを設定
+        return [];
+    } else {
+        // コメント情報を設定
+        let resultComments = [];
+        comments.rows.forEach(async function(row) {
+            resultComments.push({
+                "comentId" : row.comment_id
+                , "content" : row.content
+            });
+        });
+        return resultComments;
+    }
+};
 
 /**
  * ボード登録API（単体）
