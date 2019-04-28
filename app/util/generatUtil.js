@@ -41,7 +41,7 @@ module.exports = {
     let folderId = '';
 
     // フォルダIDを生成
-    folderId = this.getRandomStr(res, 15);
+    folderId = this.getRandomStr(res, 6);
 
     // フォルダIDの重複チェック
     if (await documentUtil.isFolderId(res, folderId)) {
@@ -65,7 +65,7 @@ module.exports = {
     let documentId = '';
 
     // ドキュメントIDを生成
-    documentId = this.getRandomStr(res, 15);
+    documentId = this.getRandomStr(res, 6);
 
     // ドキュメントIDの重複チェック
     if (await documentUtil.isDocumentId(res, documentId)) {
@@ -89,7 +89,7 @@ module.exports = {
     let boardId = '';
 
     // ボードIDを生成
-    boardId = this.getRandomStr(res, 15);
+    boardId = this.getRandomStr(res, 6);
 
     // ボードIDの重複チェック
     if (await wallUtil.isBoardId(boardId)) {
@@ -114,7 +114,7 @@ module.exports = {
     let panelId = '';
 
     // パネルIDを生成
-    panelId = this.getRandomStr(res, 15);
+    panelId = this.getRandomStr(res, 6);
 
     // パネルIDの重複チェック
     if (await wallUtil.isPanelId(boardId, panelId)) {
