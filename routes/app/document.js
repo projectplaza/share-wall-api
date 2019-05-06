@@ -1,6 +1,8 @@
 /**
  * デザインドキュメントAPI.<br/>
  * 
+ * フォルダ&ドキュメント一覧取得API
+ * GET(http://localhost:3000/api/v1/design_documents/folder/document/list)
  * フォルダ一覧取得API
  * GET(http://localhost:3000/api/v1/design_documents/folder/list)
  * フォルダ新規作成API
@@ -34,6 +36,156 @@ const documentUtil = require('../../app/util/app/documentUtil.js');
 const generatUtil = require('../../app/util/generatUtil.js');
 const validateUtil = require('../../app/util/validateUtil.js');
 const messageUtil = require('../../app/util/messageUtil.js');
+
+/**
+ * フォルダ&ドキュメント一覧取得API
+ * 並び順:フォルダ.順序, ドキュメント.順序 昇順
+ * GET(http://localhost:3000/api/v1/design_documents/folder/document/list)
+ */
+router.get('/folder/document/list', async function(req, res, next) {
+  console.log('GET:v1/design_documents/folder/document/list execution');
+
+  // tokenからuserIdを取得
+  let userId = await tokenUtil.getUserId(req, res);
+
+  // パラメータ取得
+  let params = req.query;
+  // チームID
+  let teamId = params.teamId;
+  if (! validateUtil.isEmptyText(teamId, "チームID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+  }
+  // プロジェクトID
+  let projectId = params.projectId;
+  if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
+  }
+  // プロジェクト所属チェック
+  if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+    return res.status(400).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+  }
+
+  // フォルダ一覧を取得
+  let folders = await findFolders(teamId, projectId);
+  if (folders.rows) {
+    // 検索結果が存在しない場合、空のリストを返却
+    return res.send([]);
+  }
+
+  console.log('folders');
+  console.log(folders);
+  console.log('folders.rows');
+  console.log(folders.rows);
+
+
+  // フォルダ一覧にドキュメント情報を追記して返却
+  await Promise.all(
+    // mapの結果的は配列
+    // asyncを付けてPromiseとして返却
+    folders.map(async function(folder) {
+
+      // ドキュメント一覧を取得
+      let documents = await findDocuments(teamId, projectId, folder.folderId);
+      return {
+        "folderId" : folder.folderId
+        , "folderName" : folder.folderName
+        , "document" : documents
+        , "folderOrder" : folder.folderOrder
+      };
+    })
+  ).then( function(result) {
+    // 検索結果
+    res.send(result);
+  });
+});
+
+/**
+ * フォルダ一覧取得
+ * @param teamId
+ * @param projectId
+ */
+async function findFolders(teamId, projectId) {
+  console.log('document - findFolders()');
+
+  // フォルダ検索
+  let folders = await db.query(
+    `SELECT folder_id
+          , folder_name
+          , order_no
+       FROM sw_t_document_folder
+      WHERE team_id = $1
+        AND project_id = $2
+      ORDER BY order_no`,
+    [teamId, projectId]
+  );
+  if (!folders.rows || folders.rows.length == 0) {
+    // フォルダが存在しない場合、空のリストを返却
+    return [];
+  } else {
+    // フォルダが存在する場合
+    // 検索結果を加工
+    let result = [];
+    folders.rows.forEach(async function(row) {
+      result.push({
+        "folderId" : row.folder_id
+        , "folderName" : row.folder_name
+        , "folderOrder" : row.order_no
+      });
+    });
+    // フォルダ情報を返却
+    return result;
+  }
+};
+
+/**
+ * ドキュメント一覧取得
+ * @param teamId
+ * @param projectId
+ * @param folderId
+ */
+async function findDocuments(teamId, projectId, folderId) {
+  console.log('document - findDocuments()');
+
+  // ドキュメント検索
+  let documents = await db.query(
+    `SELECT std.document_id
+          , stdc.document_name
+          , std.order_no
+       FROM sw_t_document std 
+      INNER JOIN ( 
+            SELECT document_id
+                 , MAX(version) AS version 
+              FROM sw_t_document_content 
+             GROUP BY document_id 
+            ) AS ver 
+         ON std.document_id = ver.document_id 
+       LEFT JOIN sw_t_document_content stdc 
+         ON ver.document_id = stdc.document_id 
+        AND ver.version = stdc.version 
+      WHERE std.team_id = $1 
+        AND std.project_id = $2 
+        AND std.folder_id = $3 
+      ORDER BY std.order_no`
+    , [teamId, projectId, folderId]
+  );
+  if (!documents.rows || documents.rows.length == 0) {
+    // ドキュメントが存在しない場合、空のリストを返却
+    return [];
+  } else {
+    // ドキュメントが存在する場合
+    // 検索結果を加工
+    let result = [];
+    documents.rows.forEach(function(row) {
+      result.push({
+        "documentId" : row.document_id
+        , "documentName" : row.document_name
+        , "documentOrder" : row.order_no
+      });
+    });
+    // ドキュメント情報を返却
+    return result;
+  }
+};
 
 /**
  * フォルダ一覧取得API
