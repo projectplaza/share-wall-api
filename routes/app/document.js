@@ -922,6 +922,11 @@ router.put('/document', async function(req, res, next) {
   if (! await projectUtil.isProjectMember(res, projectId, userId)) {
     return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
   }
+  // フォルダID
+  let folderId = params.folderId;
+  if (! validateUtil.isEmptyText(folderId, "フォルダID")) {
+    return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
+  }
   // ドキュメントID
   let documentId = params.documentId;
   if (! validateUtil.isEmptyText(documentId, "ドキュメントID")) {
@@ -967,13 +972,14 @@ router.put('/document', async function(req, res, next) {
   let updDocument = await db.query(
     `UPDATE sw_t_document
         SET order_no = $1
-          , update_user = $2
-          , update_function = $3
-          , update_datetime = $4
-      WHERE team_id = $5
-        AND project_id = $6
-        AND document_id = $7`
-    , [updateOrderNo, userId, functionName, updateDate, teamId, projectId, documentId]
+          , folder_id = $2
+          , update_user = $3
+          , update_function = $4
+          , update_datetime = $5
+      WHERE team_id = $6
+        AND project_id = $7
+        AND document_id = $8`
+    , [updateOrderNo, folderId, userId, functionName, updateDate, teamId, projectId, documentId]
   );
   if (updDocument.rowCount == 0) {
     return res.status(500).send({message : "ドキュメント更新に失敗しました。(documentId:" + documentId + ")"});
@@ -1032,16 +1038,12 @@ router.put('/document', async function(req, res, next) {
   // 更新情報を返却
   res.send({
     message : "ドキュメントの更新に成功しました。",
-    teamId : teamId,
-    projectId : projectId,
+    folderId : folderId,
     documentId : documentId,
     documentName : updateDocumentName,
     content : updateContent,
     order : updateOrderNo,
     version : updateVersion,
-    updateUser : userId,
-    updateFunction : functionName,
-    updateDatetime : updateDate
   });
 });
 
