@@ -6,15 +6,14 @@ module.exports = {
 
   /**
    * ランダムな文字列を生成し返却します。
-   * @param {*} res レスポンス
    * @param {*} strLength 文字の長さ
    */
-  getRandomStr: function(res, strLength) {
+  getRandomStr: function(strLength) {
     console.log('SHARE-WALL-API-LOG : generatUtil - getRandomStr()');
 
     // パラメータチェック
     if (strLength == null) {
-      res.status(500).send({message : "API ERROR. NOT strLength."});
+      return null;
     }
     
     // 生成する文字列に含める文字セット
@@ -32,21 +31,21 @@ module.exports = {
   /**
    * デザインドキュメント用の利用可能なフォルダIDを生成し返却します。<br>
    * フォルダーID:システム内で一意なキー
-   * @param {*} res レスポンス
-   * @return {*} フォルダID
+   * @param teamId チームID
+   * @return フォルダID
    */
-  getDesignDocumentFolderId: async function(res) {
+  getDesignDocumentFolderId: async function(teamId) {
     console.log('SHARE-WALL-API-LOG : generatUtil - getDesignDocumentFolderId()');
 
     let folderId = '';
 
     // フォルダIDを生成
-    folderId = this.getRandomStr(res, 6);
+    folderId = this.getRandomStr(6);
 
     // フォルダIDの重複チェック
-    if (await documentUtil.isFolderId(res, folderId)) {
+    if (await documentUtil.isFolderId(teamId, folderId)) {
       // 重複した場合、もう一度IDを生成
-      folderId = this.getDesignDocumentFolderId(res);
+      folderId = this.getDesignDocumentFolderId();
     }
 
     // フォルダIDを返却
@@ -56,21 +55,21 @@ module.exports = {
   /**
    * デザインドキュメント用の利用可能なドキュメントIDを生成し返却します。<br>
    * ドキュメントID:システム内で一意なキー
-   * @param {*} res レスポンス
+   * @param teamId チームID
    * @return {*} ドキュメントID
    */
-  getDesignDocumentDocumentId: async function(res) {
+  getDesignDocumentDocumentId: async function(teamId) {
     console.log('SHARE-WALL-API-LOG : generatUtil - getDesignDocumentDocumentId()');
 
     let documentId = '';
 
     // ドキュメントIDを生成
-    documentId = this.getRandomStr(res, 6);
+    documentId = this.getRandomStr(6);
 
     // ドキュメントIDの重複チェック
-    if (await documentUtil.isDocumentId(res, documentId)) {
+    if (await documentUtil.isDocumentId(teamId, documentId)) {
       // 重複した場合、もう一度IDを生成
-      documentId = this.getDesignDocumentDocumentId();
+      documentId = this.getDesignDocumentDocumentId(teamId);
     }
 
     // ドキュメントIDを返却
@@ -89,7 +88,7 @@ module.exports = {
     let boardId = '';
 
     // ボードIDを生成
-    boardId = this.getRandomStr(res, 6);
+    boardId = this.getRandomStr(6);
 
     // ボードIDの重複チェック
     if (await wallUtil.isBoardId(boardId)) {
@@ -114,7 +113,7 @@ module.exports = {
     let panelId = '';
 
     // パネルIDを生成
-    panelId = this.getRandomStr(res, 6);
+    panelId = this.getRandomStr(6);
 
     // パネルIDの重複チェック
     if (await wallUtil.isPanelId(boardId, panelId)) {

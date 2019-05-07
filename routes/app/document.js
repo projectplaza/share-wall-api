@@ -72,12 +72,6 @@ router.get('/folder/document/list', async function(req, res, next) {
     return res.send([]);
   }
 
-  console.log('folders');
-  console.log(folders);
-  console.log('folders.rows');
-  console.log(folders.rows);
-
-
   // フォルダ一覧にドキュメント情報を追記して返却
   await Promise.all(
     // mapの結果的は配列
@@ -443,7 +437,7 @@ router.post('/folder', async function(req, res, next) {
   }
 
   // フォルダID生成
-  let folderId = await generatUtil.getDesignDocumentFolderId(res);
+  let folderId = await generatUtil.getDesignDocumentFolderId();
   // 順序
   let orderNo = 0;
   // 登録日時
@@ -519,7 +513,7 @@ router.post('/document', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
   }
   // フォルダIDのマスタチェック
-  if (! await documentUtil.isFolderId(res, folderId)) {
+  if (! await documentUtil.isFolderId(teamId, folderId)) {
     return res.status(500).send({message : "フォルダIDが存在しません。(folderId:" + folderId + ")"});
   }
   // ドキュメント名
@@ -541,7 +535,7 @@ router.post('/document', async function(req, res, next) {
   }
 
   // ドキュメントID生成
-  let documentId = await generatUtil.getDesignDocumentDocumentId();
+  let documentId = await generatUtil.getDesignDocumentDocumentId(teamId);
   // 順序
   let orderNo = '0';
   // 登録日時
@@ -569,14 +563,14 @@ router.post('/document', async function(req, res, next) {
   // コンテンツ登録SQL
   let contentSql = `
   INSERT INTO sw_t_document_content 
-  (document_id, version, document_name, content
+  (team_id, document_id, version, document_name, content
     , create_user, create_function, create_datetime) 
-  VALUES ($1, $2, $3, $4, $5, $6, $7)`;
+  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`;
 
   // コンテンツ登録
   let newContent = await db.query(
     contentSql
-    , [documentId, version, documentName, content, userId, functionName, insertDate]
+    , [teamId, documentId, version, documentName, content, userId, functionName, insertDate]
   );
   if (newContent.rowCount == 0) {
     return res.status(500).send({message : "ドキュメントコンテンツ登録に失敗しました。(documentId:" + documentId + ")"});
@@ -641,17 +635,17 @@ router.delete('/folder', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
   }
   // フォルダIDのマスタチェック
-  if (! await documentUtil.isFolderId(res, folderId)) {
+  if (! await documentUtil.isFolderId(teamId, folderId)) {
     return res.status(500).send({message : "フォルダIDが存在しません。(folderId:" + folderId + ")"});
   }
 
   // フォルダIDの利用状態チェック
   let useFolderId = await db.query(
     `SELECT document_id 
-     FROM sw_t_document 
-     WHERE team_id = $1 
-     AND project_id = $2 
-     AND folder_id = $3`
+       FROM sw_t_document 
+      WHERE team_id = $1 
+        AND project_id = $2 
+        AND folder_id = $3`
     , [teamId, projectId, folderId]
   );
   if (useFolderId != null && useFolderId.rows != null && useFolderId.rowCount > 0) {
@@ -728,7 +722,7 @@ router.delete('/document', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("ドキュメントID", "documentId")});
   }
   // ドキュメントIDのマスタチェック
-  if (! await documentUtil.isDocumentId(res, documentId)) {
+  if (! await documentUtil.isDocumentId(teamId, documentId)) {
     return res.status(500).send({message : "ドキュメントIDが存在しません。(documentId:" + documentId + ")"});
   }
 
@@ -766,8 +760,9 @@ async function deleteDocument(teamId, projectId, documentId) {
   // コンテンツ全削除
   let delContents = await db.query(
     `DELETE FROM sw_t_document_content 
-     WHERE document_id = $1`
-     , [documentId]
+     WHERE team_id = $1
+       AND document_id = $2`
+     , [teamId, documentId]
   );
   if (delContents.rowCount == 0) {
     return false;
@@ -817,7 +812,7 @@ router.put('/folder', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("フォルダID", "folderId")});
   }
   // プロジェクトIDのマスタチェック
-  if (! await documentUtil.isFolderId(res, folderId)) {
+  if (! await documentUtil.isFolderId(teamId, folderId)) {
     return res.status(500).send({message : "フォルダIDが存在しません。(folderId:" + folderId + ")"});
   }
   // フォルダ名
@@ -933,7 +928,7 @@ router.put('/document', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("ドキュメントID", "documentId")});
   }
   // ドキュメントIDのマスタチェック
-  if (! await documentUtil.isDocumentId(res, documentId)) {
+  if (! await documentUtil.isDocumentId(teamId, documentId)) {
     return res.status(500).send({message : "ドキュメントIDが存在しません。(documentId:" + documentId + ")"});
   }
   // ドキュメント名
@@ -948,42 +943,36 @@ router.put('/document', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
   }
 
-  // ドキュメント情報を取得
-  let documentInfo = await db.query(
-    `SELECT * 
-     FROM sw_t_document
-     WHERE team_id = $1 
-     AND project_id = $2 
-     AND document_id = $3 `
+  // 順序を取得
+  let serveOrderNo = await db.query(
+    `SELECT order_no
+       FROM sw_t_document
+      WHERE team_id = $1
+        AND project_id = $2
+        AND document_id = $3`
      , [teamId, projectId, documentId]
   );
-  if (documentInfo.rowCount == 0) {
+  if (serveOrderNo.rowCount == 0) {
     return res.status(500).send({message : "ドキュメント取得に失敗しました。(documentId:" + documentId + ")"});
   }
-
   // 更新用順序
-  let updateOrderNo = documentInfo.rows[0].order_no;
+  let updateOrderNo = serveOrderNo.rows[0].order_no;
   if (validateUtil.isEmptyText(orderNo, "順序")) {
     updateOrderNo = orderNo;
   }
   // 更新日時
   let updateDate = new Date();
 
-  // ドキュメント更新SQL
-  let updateDocumentSql = `
-    UPDATE sw_t_document 
-    SET order_no = $1 
-    , update_user = $2 
-    , update_function = $3 
-    , update_datetime = $4 
-    WHERE team_id = $5 
-    AND project_id = $6 
-    AND document_id = $7 
-  `;
-
   // ドキュメント更新
   let updDocument = await db.query(
-    updateDocumentSql
+    `UPDATE sw_t_document
+        SET order_no = $1
+          , update_user = $2
+          , update_function = $3
+          , update_datetime = $4
+      WHERE team_id = $5
+        AND project_id = $6
+        AND document_id = $7`
     , [updateOrderNo, userId, functionName, updateDate, teamId, projectId, documentId]
   );
   if (updDocument.rowCount == 0) {
@@ -992,17 +981,18 @@ router.put('/document', async function(req, res, next) {
 
   // 最新のコンテンツ情報を取得
   let contentInfo = await db.query(
-    `SELECT * 
-    FROM sw_t_document_content stdc 
-    INNER JOIN (
-      SELECT document_id, MAX(version) AS version 
-      FROM sw_t_document_content
-      WHERE document_id = $1 
-      GROUP BY document_id
-    ) ver
-    ON stdc.document_id = ver.document_id 
-    AND stdc.version = ver.version `
-     , [documentId]
+    `SELECT stdc.document_name, stdc.content, stdc.version
+       FROM sw_t_document_content stdc
+      INNER JOIN (
+            SELECT document_id, MAX(version) AS version
+              FROM sw_t_document_content
+             WHERE team_id = $1
+               AND document_id = $2
+             GROUP BY document_id
+            ) ver
+         ON stdc.document_id = ver.document_id
+        AND stdc.version = ver.version`
+     , [teamId, documentId]
   );
   if (contentInfo.rowCount == 0) {
     return res.status(500).send({message : "コンテンツ取得に失敗しました。(documentId:" + documentId + ")"});
@@ -1021,17 +1011,19 @@ router.put('/document', async function(req, res, next) {
   // 更新用バージョン
   let updateVersion = contentInfo.rows[0].version + 1;
 
-  // コンテンツ登録SQL
-  let insertContentSql = `
-  INSERT INTO sw_t_document_content 
-  (document_id, version, document_name, content
-    , create_user, create_function, create_datetime) 
-  VALUES ($1, $2, $3, $4, $5, $6, $7)`;
-
   // コンテンツ登録
   let newContent = await db.query(
-    insertContentSql
-    , [documentId, updateVersion, updateDocumentName, updateContent, userId, functionName, updateDate]
+    `INSERT INTO sw_t_document_content(
+            team_id
+          , document_id
+          , version
+          , document_name
+          , content
+          , create_user
+          , create_function
+          , create_datetime)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`
+      , [teamId, documentId, updateVersion, updateDocumentName, updateContent, userId, functionName, updateDate]
   );
   if (newContent.rowCount == 0) {
     return res.status(500).send({message : "コンテンツ登録に失敗しました。(documentId:" + documentId + ")"});
@@ -1043,9 +1035,10 @@ router.put('/document', async function(req, res, next) {
     teamId : teamId,
     projectId : projectId,
     documentId : documentId,
+    documentName : updateDocumentName,
+    content : updateContent,
     order : updateOrderNo,
     version : updateVersion,
-    documentName : updateDocumentName,
     updateUser : userId,
     updateFunction : functionName,
     updateDatetime : updateDate
