@@ -1,5 +1,5 @@
 
-const documentUtil = require('./app/documentUtil.js');
+const documentUtil = require('../document/documentUtil.js');
 const wallUtil = require('../wall/wallUtil.js');
 
 module.exports = {

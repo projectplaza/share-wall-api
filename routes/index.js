@@ -5,7 +5,7 @@ const user = require('../app/main/user');
 const team = require('../app/main/team');
 const project = require('../app/main/project');
 // 機能
-const designDocument = require('../app/app/document');
+const designDocument = require('../app/document/document');
 const wall_board = require('../app/wall/wall_board');
 const wall_panel = require('../app/wall/wall_panel');
 const wall_task = require('../app/wall/wall_task');
