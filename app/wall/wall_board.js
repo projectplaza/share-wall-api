@@ -10,6 +10,11 @@
  * ボード削除API（単体）
  * DELETE(http://localhost:3000/api/v1/wall/board)
  * 
+ * メンバー一覧取得API（複数）
+ * GET(http://localhost:3000/api/v1/wall/board/member/list)
+ * メンバー登録API（複数）
+ * POST(http://localhost:3000/api/v1/wall/board/member)
+ * 
  */
 var express = require('express');
 var router = express.Router();
@@ -178,6 +183,91 @@ router.post('/', async function(req, res, next) {
         createUser : userId,
         createFunction : functionName,
         createDatetime : insertDate
+    });
+});
+
+/**
+ * メンバー登録API（複数）
+ * POST(http://localhost:3000/api/v1/wall/board/member)
+ */
+router.post('/members', async function(req, res, next) {
+    console.log('POST:v1/wall/board/member execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータから登録情報を取得
+    let params = req.body;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // チーム管理者チェック
+    if (! await teamUtil.hasAdmin(teamId, userId)) {
+        return res.status(400).send({message : "チームに所属していません。(teamId:" + teamId + ")"});
+    }
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // ボードIDのマスタチェック
+    if (! await wallUtil.isBoardId(boardId)) {
+        return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
+    }
+    // メンバー
+    let members = params.members;
+    if (! validateUtil.isEmptyObject(members, "メンバー")) {
+        return res.status(400).send({message : messageUtil.errMessage001("メンバー", "members")});
+    }
+    // 機能名
+    let functionName = params.functionName;
+    if (! validateUtil.isEmptyText(functionName, "機能名")) {
+        return res.status(400).send({message : messageUtil.errMessage001("機能名", "functionName")});
+    }
+
+    // メンバー削除
+    await db.query(
+        `DELETE FROM sw_t_wall_board_member 
+          WHERE team_id = $1
+            AND board_id = $2`
+         , [teamId, boardId]
+    );
+
+    // 登録日時
+    let insertDate = new Date();
+
+    // メンバー登録
+    await Promise.all(
+        members.map(async function(member) {
+
+            // メンバーID
+            let memberId = member.userId;
+            if (! validateUtil.isEmptyText(memberId, "メンバーID")) {
+                return res.status(400).send({message : messageUtil.errMessage001("メンバーID", "userId")});
+            }
+
+            // メンバー登録
+            await db.query(
+                `INSERT INTO sw_t_wall_board_member (
+                    team_id,
+                    board_id,
+                    user_id,
+                    create_user,
+                    create_function,
+                    create_datetime)
+                 VALUES ($1, $2, $3, $4, $5, $6)`
+                , [teamId, boardId, memberId, userId, functionName, insertDate]);
+        })
+    );    
+
+    // 登録情報を返却
+    res.send({
+        "message": "ボードメンバーを登録しました。",
+        "teamId" : teamId,
+        "boardId" : boardId,
+        "members" : members
     });
 });
 
@@ -383,7 +473,19 @@ async function deleteBoard(teamId, projectId, boardId) {
         return false;
     }
 
-    // パネル削除
+    // ボードメンバー削除
+    let delMember = await db.query(
+        `DELETE FROM sw_t_wall_board_member 
+          WHERE team_id = $1 
+            AND board_id = $2`
+         , [teamId, boardId]
+      );
+      if (delMember.rowCount == 0) {
+        // 失敗でもOK
+        // return false;
+    }
+  
+      // パネル削除
     let delPanel = await db.query(
       `DELETE FROM sw_t_wall_panel 
         WHERE board_id = $1`
