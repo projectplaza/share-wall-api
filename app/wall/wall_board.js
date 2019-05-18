@@ -11,9 +11,9 @@
  * DELETE(http://localhost:3000/api/v1/wall/board)
  * 
  * メンバー一覧取得API（複数）
- * GET(http://localhost:3000/api/v1/wall/board/member/list)
+ * GET(http://localhost:3000/api/v1/wall/board/members/list)
  * メンバー登録API（複数）
- * POST(http://localhost:3000/api/v1/wall/board/member)
+ * POST(http://localhost:3000/api/v1/wall/board/members)
  * 
  */
 var express = require('express');
@@ -98,6 +98,68 @@ router.get('/list', async function(req, res, next) {
       });
     });
     res.send(result);
+});
+
+/**
+ * メンバー一覧取得API（複数）
+ * GET(http://localhost:3000/api/v1/wall/board/members/list)
+ */
+router.get('/members/list', async function(req, res, next) {
+    console.log('GET:v2/wall/board/members/list execution');
+  
+    // tokenからuserIdを取得
+    let userId = await tokenUtil.getUserId(req, res);
+  
+    // パラメータ取得
+    let params = req.query;
+    // チームID
+    let teamId = params.teamId;
+    if (! validateUtil.isEmptyText(teamId, "チームID")) {
+      return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
+    }
+    // チームメンバーチェック
+    if (! await teamUtil.hasMember(teamId, userId)) {
+        return res.status(400).send({message : "チームに所属していません。(teamId:" + teamId + ")"});
+    }
+    // ボードID
+    let boardId = params.boardId;
+    if (! validateUtil.isEmptyText(boardId, "ボードID")) {
+        return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
+    }
+    // ボードIDのマスタチェック
+    if (! await wallUtil.isBoardId(boardId)) {
+        return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
+    }
+  
+    // 検索
+    let members = await db.query(
+        `SELECT mu.user_id
+              , mu.user_name
+              , mu.prof
+           FROM sw_t_wall_board_member tm
+           LEFT JOIN sw_m_user mu
+             ON tm.user_id = mu.user_id
+          WHERE tm.team_id = $1
+            AND tm.board_id = $2`,
+        [teamId, boardId]);
+    if (!members.rows || members.rows.length == 0) {
+      // ボードが存在しない場合、空のリストを返却
+      return res.send([]);
+    }
+
+    let resultMember = [];
+    members.rows.forEach(await function(row) {
+        resultMember.push({
+            "userId": row.user_id,
+            "userName": row.user_name,
+            "prof": row.prof
+      });
+    });
+    res.send({
+        "teamId" : teamId
+        , "boardId" : boardId
+        , "members" : resultMember
+    });
 });
 
 /**
@@ -188,10 +250,10 @@ router.post('/', async function(req, res, next) {
 
 /**
  * メンバー登録API（複数）
- * POST(http://localhost:3000/api/v1/wall/board/member)
+ * POST(http://localhost:3000/api/v1/wall/board/members)
  */
 router.post('/members', async function(req, res, next) {
-    console.log('POST:v1/wall/board/member execution');
+    console.log('POST:v2/wall/board/members execution');
   
     // tokenからuserIdを取得
     let userId = await tokenUtil.getUserId(req, res);
