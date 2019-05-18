@@ -1,11 +1,12 @@
 // ./routes/index.js
-const login = require('./main/login');
-const user = require('./main/user');
-const team = require('./main/team');
-const project = require('./main/project');
+// マスタ
+const login = require('../app/main/login');
+const user = require('../app/main/user');
+const team = require('../app/main/team');
+const project = require('../app/main/project');
 // 機能
-const designDocument = require('./app/document');
-const wall = require('./app/wall');
+const designDocument = require('../app/app/document');
+const wall = require('../app/app/wall');
 
 module.exports = (app) => {
   // ログイン
