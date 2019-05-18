@@ -1,9 +1,9 @@
 // ./routes/index.js
 // マスタ
-const login = require('../app/main/login');
-const user = require('../app/main/user');
-const team = require('../app/main/team');
-const project = require('../app/main/project');
+const login = require('../app/master/login');
+const user = require('../app/master/user');
+const team = require('../app/master/team');
+const project = require('../app/master/project');
 // 機能
 const designDocument = require('../app/document/document');
 const wall_board = require('../app/wall/wall_board');

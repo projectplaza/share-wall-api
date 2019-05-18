@@ -24,9 +24,9 @@ var router = express.Router();
 const db = require('../../db');
 
 // util
-const tokenUtil = require('../../app/util/main/tokenUtil.js');
-const userUtil = require('../../app/util/main/userUtil.js');
-const teamUtil = require('../../app/util/main/teamUtil.js');
+const tokenUtil = require('../master/util/tokenUtil.js');
+const userUtil = require('../master/util/userUtil.js');
+const teamUtil = require('../master/util/teamUtil.js');
 const validateUtil = require('../../app/util/validateUtil.js');
 const messageUtil = require('../../app/util/messageUtil.js');
 
