@@ -20,9 +20,9 @@ const tokenUtil = require('../master/util/tokenUtil.js');
 const teamUtil = require('../master/util/teamUtil.js');
 const projectUtil = require('../master/util/projectUtil.js');
 const wallUtil = require('./wallUtil.js');
-const generatUtil = require('../../app/util/generatUtil.js');
-const validateUtil = require('../../app/util/validateUtil.js');
-const messageUtil = require('../../app/util/messageUtil.js');
+const generatUtil = require('../util/generatUtil.js');
+const validateUtil = require('../util/validateUtil.js');
+const messageUtil = require('../util/messageUtil.js');
 
 /**
  * コメント一覧取得API（複数）

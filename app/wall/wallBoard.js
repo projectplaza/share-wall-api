@@ -27,9 +27,9 @@ const tokenUtil = require('../master/util/tokenUtil.js');
 const teamUtil = require('../master/util/teamUtil.js');
 const projectUtil = require('../master/util/projectUtil.js');
 const wallUtil = require('./wallUtil.js');
-const generatUtil = require('../../app/util/generatUtil.js');
-const validateUtil = require('../../app/util/validateUtil.js');
-const messageUtil = require('../../app/util/messageUtil.js');
+const generatUtil = require('../util/generatUtil.js');
+const validateUtil = require('../util/validateUtil.js');
+const messageUtil = require('../util/messageUtil.js');
 
 /**
  * ボード一覧取得API（複数）
@@ -87,14 +87,17 @@ router.get('/list', async function(req, res, next) {
     let result = [];
     boards.rows.forEach(function(row) {
       result.push({
-        "teamId" : row.team_id
-        , "projectId" : row.project_id
-        , "boardId" : row.board_id
-        , "boardName" : row.board_name
-        , "order" : row.order_no
-        , "create_user" : row.create_user
-        , "create_function" : row.create_function
-        , "create_datetime" : row.update_datetime
+        "teamId" : row.team_id,
+        "projectId" : row.project_id,
+        "boardId" : row.board_id,
+        "boardName" : row.board_name,
+        "order" : row.order_no,
+        "content" : row.content,
+        "backImage" : row.back_image,
+        "backImageName" : row.back_image_name,
+        "colorCd" : row.color_cd,
+        "openFlag" : row.open_flag,
+        "statusCd" : row.status_cd
       });
     });
     res.send(result);
@@ -207,6 +210,18 @@ router.post('/', async function(req, res, next) {
     if (! validateUtil.isEmptyText(boardName, "ボード名")) {
         return res.status(400).send({message : messageUtil.errMessage001("ボード名", "boardName")});
     }
+    // 説明
+    let content = params.content;
+    // 背景画像
+    let backImage = params.backImage;
+    // 背景画像名
+    let backImageName = params.backImageName;
+    // カラーCD
+    let colorCd = params.colorCd;
+    // 公開フラグ
+    let openFlag = params.openFlag;
+    // ステータスCD
+    let statusCd = params.statusCd;
     // 機能名
     let functionName = params.functionName;
     if (! validateUtil.isEmptyText(functionName, "機能名")) {
@@ -228,25 +243,51 @@ router.post('/', async function(req, res, next) {
             board_id,
             board_name,
             order_no,
+            content,
+            back_image,
+            back_image_name,
+            color_cd,
+            open_flag,
+            status_cd,
             create_user,
             create_function,
             create_datetime,
             update_user,
             update_function,
             update_datetime)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $6, $7, $8)`
-        , [teamId, projectId, boardId, boardName, orderNo, userId, functionName, insertDate]);
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $12, $13, $14)`
+        , [
+            teamId,
+            projectId,
+            boardId,
+            boardName,
+            orderNo,
+            content,
+            backImage,
+            backImageName,
+            colorCd,
+            openFlag,
+            statusCd,
+            userId,
+            functionName,
+            insertDate
+        ]
+    );
   
     // 登録情報を返却
     res.send({
+        message : "ボードを登録しました。",
         teamId : teamId,
         projectId : projectId,
         boardId : boardId,
         boardName : boardName,
         orderNo : orderNo,
-        createUser : userId,
-        createFunction : functionName,
-        createDatetime : insertDate
+        content : content,
+        backImage : backImage,
+        backImageName : backImageName,
+        colorCd : colorCd,
+        openFlag : openFlag,
+        statusCd : statusCd
     });
 });
 
