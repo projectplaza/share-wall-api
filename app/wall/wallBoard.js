@@ -238,23 +238,23 @@ router.post('/', async function(req, res, next) {
     // ボード登録
     let newBoard = await db.query(
         `INSERT INTO sw_t_wall_board (
-            team_id,
-            project_id,
-            board_id,
-            board_name,
-            order_no,
-            content,
-            back_image,
-            back_image_name,
-            color_cd,
-            open_flag,
-            status_cd,
-            create_user,
-            create_function,
-            create_datetime,
-            update_user,
-            update_function,
-            update_datetime)
+                team_id,
+                project_id,
+                board_id,
+                board_name,
+                order_no,
+                content,
+                back_image,
+                back_image_name,
+                color_cd,
+                open_flag,
+                status_cd,
+                create_user,
+                create_function,
+                create_datetime,
+                update_user,
+                update_function,
+                update_datetime)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $12, $13, $14)`
         , [
             teamId,
@@ -460,26 +460,83 @@ router.put('/', async function(req, res, next) {
             if (! validateUtil.isEmptyText(orderNo, "ボード順序")) {
                 orderNo = befBoard.rows[0].order_no;
             }
+            // 説明
+            let content = board.content;
+            if (! validateUtil.isEmptyText(content, "説明")) {
+                content = befBoard.rows[0].content;
+            }
+            // 背景画像
+            let backImage = board.backImage;
+            if (! validateUtil.isEmptyText(backImage, "背景画像")) {
+                backImage = befBoard.rows[0].back_image;
+            }
+            // 背景画像名
+            let backImageName = board.backImageName;
+            if (! validateUtil.isEmptyText(backImageName, "背景画像名")) {
+                backImageName = befBoard.rows[0].back_image_name;
+            }
+            // カラーCD
+            let colorCd = board.colorCd;
+            if (! validateUtil.isEmptyText(colorCd, "カラーCD")) {
+                colorCd = befBoard.rows[0].color_cd;
+            }
+            // 公開フラグ
+            let openFlag = board.openFlag;
+            if (! validateUtil.isEmptyBool(openFlag, "公開フラグ")) {
+                openFlag = befBoard.rows[0].open_flag;
+            }
+            // ステータスCD
+            let statusCd = board.statusCd;
+            if (! validateUtil.isEmptyText(statusCd, "ステータスCD")) {
+                statusCd = befBoard.rows[0].status_cd;
+            }
             // ボード更新
-            let newBoard = await db.query(
-                `UPDATE sw_t_wall_board 
-                    SET team_id = $1 
-                    , project_id = $2 
-                    , board_id = $3 
-                    , board_name = $4 
-                    , order_no = $5 
-                    , update_user = $6 
-                    , update_function = $7 
-                    , update_datetime = $8 
-                WHERE team_id = $1 
-                AND project_id = $2 
-                AND board_id = $3 `
-                , [teamId, projectId, boardId, boardName, orderNo, userId, functionName, updateDate]);
+            await db.query(
+                  `UPDATE sw_t_wall_board 
+                      SET team_id = $1
+                        , project_id = $2
+                        , board_id = $3
+                        , board_name = $4
+                        , order_no = $5
+                        , content = $6
+                        , back_image = $7
+                        , back_image_name = $8
+                        , color_cd = $9
+                        , open_flag = $10
+                        , status_cd = $11
+                        , update_user = $12
+                        , update_function = $13
+                        , update_datetime = $14
+                    WHERE team_id = $1
+                      AND project_id = $2
+                      AND board_id = $3 `
+                , [
+                    teamId,
+                    projectId,
+                    boardId,
+                    boardName,
+                    orderNo,
+                    content,
+                    backImage,
+                    backImageName,
+                    colorCd,
+                    openFlag,
+                    statusCd,
+                    userId,
+                    functionName,
+                    updateDate
+                ]);
         
             resultBoards.push({
                 'boardId' : boardId,
                 'boardName' : boardName,
-                'order' : orderNo
+                'order' : orderNo,
+                'content' : content,
+                'backImage' : backImage,
+                'backImageName' : backImageName,
+                'colorCd' : colorCd,
+                'openFlag' : openFlag,
+                'statusCd' : statusCd
             });
         })
     );
