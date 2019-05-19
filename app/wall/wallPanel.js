@@ -82,6 +82,7 @@ router.get('/task/list', async function(req, res, next) {
               , panel.panel_id
               , panel.panel_name
               , panel.order_no AS panel_order
+              , status_cd
            FROM sw_t_wall_board AS board
           INNER JOIN sw_t_wall_panel AS panel
              ON board.board_id = panel.board_id
@@ -109,6 +110,7 @@ router.get('/task/list', async function(req, res, next) {
                 , "panelId" : panel.panel_id
                 , "panelName" : panel.panel_name
                 , "panelOrder" : panel.panel_order
+                , "statusCd" : panel.status_cd
                 , "task" : resultTasks
             };
         })
@@ -224,6 +226,7 @@ router.get('/list', async function(req, res, next) {
               , panel.panel_id
               , panel.panel_name
               , panel.order_no
+              , panel.status_cd
            FROM sw_t_wall_board board
           INNER JOIN sw_t_wall_panel panel
              ON board.board_id = panel.board_id
@@ -245,6 +248,7 @@ router.get('/list', async function(req, res, next) {
         , "panelId" : row.panel_id
         , "panelName" : row.panel_name
         , "order" : row.order_no
+        , "statusCd" : row.status_cd
       });
     });
     res.send(result);
@@ -302,6 +306,8 @@ router.post('/', async function(req, res, next) {
     if (! validateUtil.isEmptyText(panelName, "パネル名")) {
         return res.status(400).send({message : messageUtil.errMessage001("パネル名", "panelName")});
     }
+    // ステータスCD
+    let statusCd = params.statusCd;
     // 機能名
     let functionName = params.functionName;
     if (! validateUtil.isEmptyText(functionName, "機能名")) {
@@ -321,14 +327,15 @@ router.post('/', async function(req, res, next) {
             board_id,
             panel_id,
             panel_name,
+            status_cd,
             create_user,
             create_function,
             create_datetime,
             update_user,
             update_function,
             update_datetime)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $5, $6, $7)`
-        , [teamId, boardId, panelId, panelName, userId, functionName, insertDate]);
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $6, $7, $8)`
+        , [teamId, boardId, panelId, panelName, statusCd, userId, functionName, insertDate]);
   
     // 登録情報を返却
     res.send({
@@ -337,6 +344,7 @@ router.post('/', async function(req, res, next) {
         panelId : panelId,
         panelName : panelName,
         orderNo : 0,
+        statusCd : statusCd,
         createUser : userId,
         createFunction : functionName,
         createDatetime : insertDate
@@ -439,24 +447,33 @@ router.put('/', async function(req, res, next) {
             if (! validateUtil.isEmptyText(orderNo, "パネル順序")) {
                 orderNo = befPanel.rows[0].order_no;
             }
+            // ステータスCD
+            // パネル順序
+            let statusCd = panel.statusCd;
+            if (! validateUtil.isEmptyText(statusCd, "ステータスCD")) {
+                statusCd = befPanel.rows[0].status_cd;
+            }
+
             // パネル更新
             let newBoard = await db.query(
-                `UPDATE sw_t_wall_panel 
-                    SET board_id = $1 
-                    , panel_id = $2 
-                    , panel_name = $3 
-                    , order_no = $4 
-                    , update_user = $5 
-                    , update_function = $6 
-                    , update_datetime = $7 
-                WHERE board_id = $1
-                  AND panel_id = $2 `
-                , [boardId, panelId, panelName, orderNo, userId, functionName, updateDate]);
+                `UPDATE sw_t_wall_panel
+                    SET board_id = $1
+                      , panel_id = $2
+                      , panel_name = $3
+                      , order_no = $4
+                      , status_cd = $5
+                      , update_user = $6
+                      , update_function = $7
+                      , update_datetime = $8
+                  WHERE board_id = $1
+                    AND panel_id = $2`
+                , [boardId, panelId, panelName, orderNo, statusCd, userId, functionName, updateDate]);
         
             resultPanels.push({
                 'panelId' : panelId,
                 'panelName' : panelName,
-                'order' : orderNo
+                'order' : orderNo,
+                'statusCd' : statusCd
             });
         })
     );
