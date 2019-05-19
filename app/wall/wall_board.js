@@ -135,7 +135,8 @@ router.get('/members/list', async function(req, res, next) {
     let members = await db.query(
         `SELECT mu.user_id
               , mu.user_name
-              , mu.prof
+              , mu.icon
+              , mu.icon_name
            FROM sw_t_wall_board_member tm
            LEFT JOIN sw_m_user mu
              ON tm.user_id = mu.user_id
@@ -152,7 +153,8 @@ router.get('/members/list', async function(req, res, next) {
         resultMember.push({
             "userId": row.user_id,
             "userName": row.user_name,
-            "prof": row.prof
+            "icon": row.icon,
+            "icon_name": row.icon_name
       });
     });
     res.send({

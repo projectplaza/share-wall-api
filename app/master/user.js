@@ -33,9 +33,12 @@ router.get('/', async function(req, res, next) {
        return;
     }
     let user = users.rows[0];
-    res.send({  userId : user.user_id,
-                userName : user.user_name,
-                prof : user.prof});
+    res.send({
+        userId : user.user_id,
+        userName : user.user_name,
+        prof : user.icon,
+        icon : user.icon,
+        icon_name : user.icon_name});
 });
 
 /**
@@ -61,18 +64,18 @@ router.get('/friend', async function(req, res, next) {
     // フレンド検索
     // TODO: フレンド検索
     // まだフレンド機能がないため、ユーザ一覧を取得＆返却
-    const { rows } = await db.query('SELECT * FROM sw_m_user');
-    if (!rows || rows.length == 0) {
-      res.status(500).send({message : "ユーザ情報が見つかりません。"});
-      return;
+    let friends = await db.query('SELECT * FROM sw_m_user');
+    if (!friends || friends.length == 0) {
+      return res.send([]);
     }
     let resultDatas = [];
-    for (let i=0; i < rows.length; i++) {
-        resultDatas.push({userId : rows[i].user_id,
-                        userName : rows[i].user_name,
-                        prof : rows[i].prof});
-
-    }
+    friends.rows.forEach(await function(friend) {
+        resultDatas.push({userId : friend.user_id,
+            userName : friend.user_name,
+            prof : friend.icon,
+            icon : friend.icon,
+            icon_name : friend.icon_name});
+    });
     res.send(resultDatas);
   });
   
