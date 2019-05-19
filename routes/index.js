@@ -6,10 +6,10 @@ const team = require('../app/master/team');
 const project = require('../app/master/project');
 // 機能
 const designDocument = require('../app/document/document');
-const wall_board = require('../app/wall/wall_board');
-const wall_panel = require('../app/wall/wall_panel');
-const wall_task = require('../app/wall/wall_task');
-const wall_comment = require('../app/wall/wall_comment');
+const wall_board = require('../app/wall/wallBoard');
+const wall_panel = require('../app/wall/wallPanel');
+const wall_task = require('../app/wall/wallTask');
+const wall_comment = require('../app/wall/wallComment');
 
 module.exports = (app) => {
   // ログイン
