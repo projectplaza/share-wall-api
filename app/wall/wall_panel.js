@@ -135,8 +135,6 @@ async function findTask(teamId, projectId, boardId, panelId) {
                 , task.title
                 , task.content
                 , task.priority
-                , task.assign_user
-                , task.start_date
                 , task.deadline
                 , task.order_no AS task_order
             FROM sw_t_wall_board AS board
@@ -163,8 +161,6 @@ async function findTask(teamId, projectId, boardId, panelId) {
                 , "title" : row.title
                 , "content" : row.content
                 , "priority" : row.priority
-                , "assignUser" : row.assign_user
-                , "startDate" : row.start_date
                 , "deadline" : row.deadline
                 , "taskOrder" : row.task_order
             });
@@ -313,9 +309,7 @@ router.post('/', async function(req, res, next) {
     }
 
     // パネルIDを生成
-    // TODO: パネルIDは、ボードID＋p＋連番 としたい！
     let panelId = await generatUtil.getWallPanelId(res);
-    let orderNo = 0;
   
     // 登録日時
     let insertDate = new Date();
@@ -323,10 +317,10 @@ router.post('/', async function(req, res, next) {
     // パネル登録
     let newPanel = await db.query(
         `INSERT INTO sw_t_wall_panel (
+            team_id,
             board_id,
             panel_id,
             panel_name,
-            order_no,
             create_user,
             create_function,
             create_datetime,
@@ -334,14 +328,15 @@ router.post('/', async function(req, res, next) {
             update_function,
             update_datetime)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $5, $6, $7)`
-        , [boardId, panelId, panelName, orderNo, userId, functionName, insertDate]);
+        , [teamId, boardId, panelId, panelName, userId, functionName, insertDate]);
   
     // 登録情報を返却
     res.send({
+        teamId : teamId,
         boardId : boardId,
         panelId : panelId,
         panelName : panelName,
-        orderNo : orderNo,
+        orderNo : 0,
         createUser : userId,
         createFunction : functionName,
         createDatetime : insertDate

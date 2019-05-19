@@ -95,9 +95,6 @@ router.get('/', async function(req, res, next) {
               , task.title
               , task.content
               , task.priority
-              , task.assign_user
-              , ur.user_name assign_user_name
-              , task.start_date
               , task.deadline
               , task.order_no
            FROM sw_t_wall_board board
@@ -106,8 +103,6 @@ router.get('/', async function(req, res, next) {
           INNER JOIN sw_t_wall_task task
              ON board.board_id = task.board_id
             AND panel.panel_id = task.panel_id
-           LEFT JOIN sw_m_user ur
-             ON task.assign_user = ur.user_id
           WHERE board.team_id = $1
             AND board.project_id = $2
             AND board.board_id = $3
@@ -128,9 +123,6 @@ router.get('/', async function(req, res, next) {
         , "title" : task.rows[0].title
         , "content" : task.rows[0].content
         , "priority" : task.rows[0].priority
-        , "assignUser" : task.rows[0].assign_user
-        , "assignUserName" : task.rows[0].assign_user_name
-        , "startDate" : task.rows[0].start_date
         , "deadline" : task.rows[0].deadline
         , "order" : task.rows[0].order_no
     };
@@ -218,11 +210,6 @@ router.post('/', async function(req, res, next) {
         assignUser = "";
     }
     // TODO: マスタ存在チェック
-    // 開始日
-    let startDate = params.startDate;
-    if (! validateUtil.isEmptyText(startDate, "開始日")) {
-        startDate = null;
-    }
     // 期限日
     let deadline = params.deadline;
     if (! validateUtil.isEmptyText(deadline, "期限日")) {
@@ -238,7 +225,6 @@ router.post('/', async function(req, res, next) {
     // タスクIDを生成
     // TODO: タスクIDも、ボードID＋t＋連番 としたい！
     let taskId = await generatUtil.getWallTaskId(res, boardId);
-    let orderNo = 0;
   
     // 登録日時
     let insertDate = new Date();
@@ -246,15 +232,13 @@ router.post('/', async function(req, res, next) {
     // タスク登録
     let newTask = await db.query(
         `INSERT INTO sw_t_wall_task (
+            team_id,
             board_id,
             panel_id,
             task_id,
             title,
-            order_no,
             content,
             priority,
-            assign_user,
-            start_date,
             deadline,
             create_user,
             create_function,
@@ -262,8 +246,8 @@ router.post('/', async function(req, res, next) {
             update_user,
             update_function,
             update_datetime)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $11, $12, $13)`
-        , [boardId, panelId, taskId, title, orderNo, content, priority, assignUser, startDate, deadline,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $9, $10, $11)`
+        , [teamId, boardId, panelId, taskId, title, content, priority, deadline,
              userId, functionName, insertDate]);
             
     // 登録情報を返却
@@ -272,11 +256,10 @@ router.post('/', async function(req, res, next) {
         panelId : panelId,
         taskId : taskId,
         title : title,
-        order : orderNo,
+        order : 0,
         content : content,
         priority : priority,
         assignUser : assignUser,
-        startDate : startDate,
         deadline : deadline,
         createUser : userId,
         createFunction : functionName,
@@ -402,11 +385,6 @@ router.put('/', async function(req, res, next) {
             if (! validateUtil.isEmptyText(assignUser, "担当者")) {
                 assignUser = befTask.rows[0].assign_user;
             }
-            // 開始日
-            let startDate = inputTask.startDate;
-            if (! validateUtil.isEmptyText(startDate, "開始日")) {
-                startDate = befTask.rows[0].start_date;
-            }
             // 期限日
             let deadline = inputTask.deadline;
             if (! validateUtil.isEmptyText(deadline, "期限日")) {
@@ -426,13 +404,11 @@ router.put('/', async function(req, res, next) {
                     , title = $4
                     , content = $5 
                     , priority = $6 
-                    , assign_user = $7 
-                    , start_date = $8 
-                    , deadline = $9 
-                    , order_no = $10 
-                    , update_user = $11 
-                    , update_function = $12 
-                    , update_datetime = $13 
+                    , deadline = $7 
+                    , order_no = $8 
+                    , update_user = $9 
+                    , update_function = $10 
+                    , update_datetime = $11 
                 WHERE board_id = $1
                   AND task_id = $3 `
                 , [
@@ -442,8 +418,6 @@ router.put('/', async function(req, res, next) {
                     , title
                     , content
                     , priority
-                    , assignUser
-                    , startDate
                     , deadline
                     , orderNo
                     , userId
@@ -459,8 +433,6 @@ router.put('/', async function(req, res, next) {
                 'title' : title,
                 'content' : content,
                 'priority' : priority,
-                'assignUser' : assignUser,
-                'startDate' : startDate,
                 'deadline' : deadline,
                 'order' : orderNo
             });
