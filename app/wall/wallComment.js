@@ -65,7 +65,7 @@ router.get('/list', async function(req, res, next) {
         return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
     }
     // タスクIDのマスタチェック
-    if (! await wallUtil.isTaskId(boardId, taskId)) {
+    if (! await wallUtil.isTaskId(teamId, boardId, taskId)) {
         return res.status(400).send({message : "タスクIDが存在しません。(taskId:" + taskId + ")"});
     }
     // リミット
@@ -170,7 +170,7 @@ router.post('/', async function(req, res, next) {
       return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
     }
     // タスクIDのマスタチェック
-    if (! await wallUtil.isTaskId(boardId, taskId)) {
+    if (! await wallUtil.isTaskId(teamId, boardId, taskId)) {
       return res.status(400).send({message : "タスクIDが存在しません。(taskId:" + taskId + ")"});
     }
     // コメント内容
@@ -261,7 +261,7 @@ router.delete('/', async function(req, res, next) {
       return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
     }
     // タスクIDのマスタチェック
-    if (! await wallUtil.isTaskId(boardId, taskId)) {
+    if (! await wallUtil.isTaskId(teamId, boardId, taskId)) {
       return res.status(400).send({message : "タスクIDが存在しません。(taskId:" + taskId + ")"});
     }
     // コメントID

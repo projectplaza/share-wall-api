@@ -37,7 +37,7 @@ router.get('/task/list', async function(req, res, next) {
   
     // tokenからuserIdを取得
     let userId = await tokenUtil.getUserId(req, res);
-  
+
     // パラメータ取得
     let params = req.query;
     // チームID
@@ -82,10 +82,11 @@ router.get('/task/list', async function(req, res, next) {
               , panel.panel_id
               , panel.panel_name
               , panel.order_no AS panel_order
-              , status_cd
+              , panel.status_cd
            FROM sw_t_wall_board AS board
           INNER JOIN sw_t_wall_panel AS panel
-             ON board.board_id = panel.board_id
+             ON board.team_id = panel.team_id
+            AND board.board_id = panel.board_id
           WHERE board.team_id = $1
             AND board.project_id = $2
             AND board.board_id = $3
@@ -132,20 +133,22 @@ async function findTask(teamId, projectId, boardId, panelId) {
     // タスク検索
     let tasks = await db.query(
         `SELECT board.board_id
-                , panel.panel_id
-                , task.task_id
-                , task.title
-                , task.content
-                , task.priority
-                , task.deadline
-                , task.order_no AS task_order
-            FROM sw_t_wall_board AS board
-            INNER JOIN sw_t_wall_panel AS panel
-                ON board.board_id = panel.board_id
-            INNER JOIN sw_t_wall_task AS task
-                ON board.board_id = task.board_id
+              , panel.panel_id
+              , task.task_id
+              , task.title
+              , task.content
+              , task.priority
+              , task.deadline
+              , task.order_no AS task_order
+           FROM sw_t_wall_board AS board
+          INNER JOIN sw_t_wall_panel AS panel
+             ON board.team_id = panel.team_id
+            AND board.board_id = panel.board_id
+          INNER JOIN sw_t_wall_task AS task
+             ON board.team_id = task.team_id
+            AND board.board_id = task.board_id
             AND panel.panel_id = task.panel_id
-            WHERE board.team_id = $1
+          WHERE board.team_id = $1
             AND board.project_id = $2
             AND board.board_id = $3
             AND panel.panel_id = $4
@@ -163,6 +166,9 @@ async function findTask(teamId, projectId, boardId, panelId) {
                 , "title" : row.title
                 , "content" : row.content
                 , "priority" : row.priority
+                , "assignUsers" : [{
+                    "userCd" : "test"
+                }]
                 , "deadline" : row.deadline
                 , "taskOrder" : row.task_order
             });

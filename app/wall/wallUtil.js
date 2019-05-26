@@ -58,11 +58,12 @@ module.exports = {
 
   /**
    * マスタに存在するタスクIDか判定します。
-   * @param {*} boardId ボードID
+   * @param teamId チームID
+   * @param boardId ボードID
    * @param {*} taskId タスクID
    * @return true:存在する/false:存在しない
    */
-  isTaskId: async function(boardId, taskId) {
+  isTaskId: async function(teamId, boardId, taskId) {
     console.log('SHARE-WALL-API-LOG : wallUtil - isTaskId()');
     // パラメータチェック
     if (taskId == null) {
@@ -73,9 +74,10 @@ module.exports = {
     let result = await db.query(
       `SELECT count(task_id)
          FROM sw_t_wall_task
-        WHERE board_id = $1
-          AND task_id = $2`
-      , [boardId, taskId]
+        WHERE team_id = $1
+          AND board_id = $2
+          AND task_id = $3`
+      , [teamId, boardId, taskId]
     );
     if (result != null && result.rows != null && result.rows[0].count > 0) {
       return true;

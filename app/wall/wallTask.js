@@ -74,17 +74,15 @@ router.get('/', async function(req, res, next) {
         return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
     }
     // タスクID
-    let taskId = params.taskId;
-    if (! validateUtil.isEmptyText(taskId, "タスクID")) {
+    let taskId = Number( params.taskId );
+    if (! validateUtil.isEmptyNumber(taskId, "タスクID")) {
         return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
     }
     // タスクIDのマスタチェック
-    if (! await wallUtil.isTaskId(boardId, taskId)) {
+    if (! await wallUtil.isTaskId(teamId, boardId, taskId)) {
         return res.status(400).send({message : "タスクIDが存在しません。(taskId:" + taskId + ")"});
     }
-      
 
-  
     // 検索
     let task = await db.query(
         `SELECT board.team_id
@@ -99,9 +97,11 @@ router.get('/', async function(req, res, next) {
               , task.order_no
            FROM sw_t_wall_board board
           INNER JOIN sw_t_wall_panel panel
-             ON board.board_id = panel.board_id
+             ON board.team_id = panel.team_id
+            AND board.board_id = panel.board_id
           INNER JOIN sw_t_wall_task task
-             ON board.board_id = task.board_id
+             ON board.team_id = task.team_id
+            AND board.board_id = task.board_id
             AND panel.panel_id = task.panel_id
           WHERE board.team_id = $1
             AND board.project_id = $2
@@ -123,6 +123,9 @@ router.get('/', async function(req, res, next) {
         , "title" : task.rows[0].title
         , "content" : task.rows[0].content
         , "priority" : task.rows[0].priority
+        , "assignUsers" : [{
+            "userCd" : "test"
+        }]
         , "deadline" : task.rows[0].deadline
         , "order" : task.rows[0].order_no
     };
@@ -337,7 +340,7 @@ router.put('/', async function(req, res, next) {
                 return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
             }
             // タスクIDのマスタチェック
-            if (! await wallUtil.isTaskId(boardId, taskId)) {
+            if (! await wallUtil.isTaskId(teamId, boardId, taskId)) {
                 return res.status(400).send({message : "タスクIDが存在しません。(taskId:" + taskId + ")"});
             }
 
@@ -505,7 +508,7 @@ router.delete('/', async function(req, res, next) {
       return res.status(400).send({message : messageUtil.errMessage001("タスクID", "taskId")});
     }
     // タスクIDのマスタチェック
-    if (! await wallUtil.isTaskId(boardId, taskId)) {
+    if (! await wallUtil.isTaskId(teamId, boardId, taskId)) {
       return res.status(400).send({message : "タスクIDが存在しません。(taskId:" + taskId + ")"});
     }
   
