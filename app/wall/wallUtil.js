@@ -6,10 +6,11 @@ module.exports = {
 
   /**
    * マスタに存在するボードIDか判定します。
+   * @param {*} teamId チームID
    * @param {*} boardId ボードID
    * @return true:存在する/false:存在しない
    */
-  isBoardId: async function(boardId) {
+  isBoardId: async function(teamId, boardId) {
     console.log('SHARE-WALL-API-LOG : wallUtil - isBoardId()');
     // パラメータチェック
     if (boardId == null) {
@@ -20,8 +21,9 @@ module.exports = {
     let result = await db.query(
       `SELECT count(board_id)
        FROM sw_t_wall_board
-       WHERE board_id = $1`
-      , [boardId]
+       WHERE team_id = $1
+         AND board_id = $2`
+      , [teamId, boardId]
     );
     if (result != null && result.rows != null && result.rows[0].count > 0) {
       return true;
@@ -31,11 +33,12 @@ module.exports = {
 
   /**
    * マスタに存在するパネルIDか判定します。
+   * @param {*} teamId チームID
    * @param {*} boardId ボードID
    * @param {*} panelId パネルID
    * @return true:存在する/false:存在しない
    */
-  isPanelId: async function(boardId, panelId) {
+  isPanelId: async function(teamId, boardId, panelId) {
     console.log('SHARE-WALL-API-LOG : wallUtil - isPanelId()');
     // パラメータチェック
     if (panelId == null) {
@@ -46,9 +49,10 @@ module.exports = {
     let result = await db.query(
       `SELECT count(panel_id)
          FROM sw_t_wall_panel
-        WHERE board_id = $1
-          AND panel_id = $2`
-      , [boardId, panelId]
+        WHERE team_id = $1
+          AND board_id = $2
+          AND panel_id = $3`
+      , [teamId, boardId, panelId]
     );
     if (result != null && result.rows != null && result.rows[0].count > 0) {
       return true;
@@ -116,8 +120,10 @@ module.exports = {
 
   /**
    * 最大のタスクIDを取得します。
+   * @param teamId チームID
+   * @param boardId ボードID
    */
-  getMaxTaskId: async function(boardId) {
+  getMaxTaskId: async function(teamId, boardId) {
     console.log('SHARE-WALL-API-LOG : wallUtil - getMaxTaskId()');
     // パラメータチェック
     if (boardId == null) {
@@ -128,8 +134,9 @@ module.exports = {
     let result = await db.query(
       `SELECT max(task_id)
          FROM sw_t_wall_task
-        WHERE board_id = $1`
-      , [boardId]
+        WHERE team_id = $1
+          AND board_id = $2`
+      , [teamId, boardId]
     );
     if (result != null && result.rows != null) {
       // 最大ID値を返却
@@ -142,10 +149,11 @@ module.exports = {
 
   /**
    * 最大のコメントIDを取得します。
+   * @param teamId チームID
    * @param boardId ボードID
    * @param taskId タスクID
    */
-  getMaxCommentId: async function(boardId, taskId) {
+  getMaxCommentId: async function(teamId, boardId, taskId) {
     console.log('SHARE-WALL-API-LOG : wallUtil - getMaxCommentId()');
     // パラメータチェック
     if (boardId == null || taskId == null) {
@@ -156,9 +164,10 @@ module.exports = {
     let result = await db.query(
       `SELECT max(comment_id)
          FROM sw_t_wall_comment
-        WHERE board_id = $1
-          AND task_id = $2`
-      , [boardId, taskId]
+        WHERE team_id = $1
+          AND board_id = $2
+          AND task_id = $3`
+      , [teamId, boardId, taskId]
     );
     if (result != null && result.rows != null) {
       // 最大ID値を返却

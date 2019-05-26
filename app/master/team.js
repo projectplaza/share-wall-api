@@ -177,7 +177,7 @@ router.post('/', async function(req, res, next) {
   }
 
   // チームIDの利用可能チェック
-  if (await teamUtil.isTeamId(res, teamId)) {
+  if (await teamUtil.isTeamId(teamId)) {
     return res.status(500).send({message : "登録済みのチームIDです。(teamId:" + teamId + ")"});
   }
 
@@ -335,7 +335,7 @@ router.put('/users', async function(req, res, next) {
         return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
       }
       // ユーザの存在チェック
-      if (! await userUtil.isUserId(res, userId)) {
+      if (! await userUtil.isUserId(userId)) {
         return res.status(500).send({message : "存在しないユーザIDです。(userId:" + userId + ")"});
       }
       // 管理者権限
@@ -442,14 +442,9 @@ router.post('/users', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
   // チームIDのマスタ存在チェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
+  if (! await teamUtil.isTeamId(teamId)) {
     return res.status(400).send({message : messageUtil.errMessage002("チーム")});
   }
-  // 初回登録時、メンバー０人のためチェックしない
-  // // チームの権限チェック
-  // if (! await teamUtil.isTeamAuthority(teamId, insertUserId)) {
-  //   return res.status(400).send({message : messageUtil.errMessage003("チーム")}); 
-  // }
 
   // 機能名
   let functionName = params.functionName;
@@ -472,7 +467,7 @@ router.post('/users', async function(req, res, next) {
     }
 
     // メンバーの存在チェック
-    if (! await userUtil.isUserId(res, userId)) {
+    if (! await userUtil.isUserId(userId)) {
       return res.status(500).send({message : "存在しないユーザIDです。(userId:" + userId + ")"});
     }
 

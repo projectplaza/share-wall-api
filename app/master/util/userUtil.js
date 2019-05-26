@@ -6,15 +6,14 @@ module.exports = {
 
   /**
    * マスタに存在するユーザIDか判定します。
-   * @param {*} res 
    * @param {*} userId ユーザID
    * @return true:存在する/false:存在しない
    */
-  isUserId: async function(res, userId) {
+  isUserId: async function(userId) {
     console.log('SHARE-WALL-API-LOG : userUtil - isUserId()');
     // パラメータチェック
     if (userId == null) {
-      res.status(500).send({message : "API ERROR. NOT userId."});
+      return false;
     }
 
     // ユーザを検索

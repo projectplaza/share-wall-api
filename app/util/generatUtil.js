@@ -79,10 +79,9 @@ module.exports = {
   /**
    * ウォール用の利用可能なボードIDを生成し返却します。<br>
    * ボードID:システム内で一意なキー
-   * @param {*} res レスポンス
    * @return {*} ボードID
    */
-  getWallBoardId: async function(res) {
+  getWallBoardId: async function(teamId) {
     console.log('SHARE-WALL-API-LOG : generatUtil - getWallBoardId()');
 
     let boardId = '';
@@ -91,9 +90,9 @@ module.exports = {
     boardId = this.getRandomStr(6);
 
     // ボードIDの重複チェック
-    if (await wallUtil.isBoardId(boardId)) {
+    if (await wallUtil.isBoardId(teamId, boardId)) {
       // 重複した場合、もう一度IDを生成
-      boardId = this.getWallBoardId(res);
+      boardId = this.getWallBoardId(teamId);
     }
 
     // ボードIDを返却
@@ -103,11 +102,11 @@ module.exports = {
   /**
    * ウォール用の利用可能なパネルIDを生成し返却します。<br>
    * パネルID:システム内で一意なキー
-   * @param {*} res レスポンス
+   * @param {*} teamId チームID
    * @param {*} boardId ボードID
    * @return {*} パネルID
    */
-  getWallPanelId: async function(res, boardId) {
+  getWallPanelId: async function(teamId, boardId) {
     console.log('SHARE-WALL-API-LOG : generatUtil - getWallPanelId()');
 
     let panelId = '';
@@ -116,9 +115,9 @@ module.exports = {
     panelId = this.getRandomStr(6);
 
     // パネルIDの重複チェック
-    if (await wallUtil.isPanelId(boardId, panelId)) {
+    if (await wallUtil.isPanelId(teamId, boardId, panelId)) {
       // 重複した場合、もう一度IDを生成
-      panelId = this.getWallPanelId(res, boardId);
+      panelId = this.getWallPanelId(boardId);
     }
 
     // パネルIDを返却
@@ -128,14 +127,14 @@ module.exports = {
   /**
    * ウォール用の利用可能なタスクIDを生成し返却します。<br>
    * タスクID:ボード内で一意なキー
-   * @param {*} res レスポンス
+   * @param {*} teamId チームID
    * @param {*} boardId ボードID
    * @return {*} タスクID
    */
-  getWallTaskId: async function(res, boardId) {
+  getWallTaskId: async function(teamId, boardId) {
     console.log('SHARE-WALL-API-LOG : generatUtil - getWallTaskId()');
 
-    let maxId = await wallUtil.getMaxTaskId(boardId);
+    let maxId = await wallUtil.getMaxTaskId(teamId, boardId);
     console.log(maxId)
 
     // 最大値＋１を返却
@@ -145,15 +144,15 @@ module.exports = {
   /**
    * ウォール用の利用可能なコメントIDを生成し返却します。<br>
    * コメントID:タスク内で一意なキー
-   * @param {*} res レスポンス
+   * @param {*} teamId チームID
    * @param {*} boardId ボードID
    * @param {*} taskId タスクID
    * @return {*} コメントID
    */
-  getWallCommentId: async function(boardId, taskId) {
+  getWallCommentId: async function(teamId, boardId, taskId) {
     console.log('SHARE-WALL-API-LOG : generatUtil - getWallCommentId()');
 
-    let maxId = await wallUtil.getMaxCommentId(boardId, taskId);
+    let maxId = await wallUtil.getMaxCommentId(teamId, boardId, taskId);
     console.log(maxId)
 
     // 最大値＋１を返却

@@ -213,7 +213,7 @@ router.post('/', async function(req, res, next) {
   }
   // チームの権限チェック
   if (! await teamUtil.hasMember(teamId, userId)) {
-    return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")}); 
+    return res.status(400).send({message : messageUtil.errMessage003("チームメンバー")}); 
   }
 
   // プロジェクトID
@@ -222,7 +222,7 @@ router.post('/', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクトIDの利用可能チェック
-  if (await projectUtil.isProjectId(res, projectId)) {
+  if (await projectUtil.isProjectId(projectId)) {
     return res.status(400).send({message : "登録済みのプロジェクトIDです。(projectId:" + projectId + ")"});
   }
   // プロジェクト名
@@ -483,7 +483,7 @@ router.put('/users', async function(req, res, next) {
         return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
       }
       // ユーザの存在チェック
-      if (! await userUtil.isUserId(res, userId)) {
+      if (! await userUtil.isUserId(userId)) {
         return res.status(400).send({message : "存在しないユーザIDです。(userId:" + userId + ")"});
       }
       // 管理者権限
@@ -604,7 +604,7 @@ router.post('/users', async function(req, res, next) {
   }
   // チームの権限チェック
   if (! await teamUtil.hasMember(teamId, userId)) {
-    return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")}); 
+    return res.status(400).send({message : messageUtil.errMessage003("チームメンバー")}); 
   }
 
   // プロジェクトID
@@ -635,11 +635,11 @@ router.post('/users', async function(req, res, next) {
         return res.status(400).send({message : messageUtil.errMessage001("ユーザID", "userId")});
       }
       // ユーザの存在チェック
-      if (! await userUtil.isUserId(res, targetUserId)) {
+      if (! await userUtil.isUserId(targetUserId)) {
         return res.status(400).send({message : "存在しないユーザIDです。(userId:" + targetUserId + ")"});
       }
       // ユーザの登録済みチェック
-      if (await projectUtil.isProjectMember(res, projectId, targetUserId)) {
+      if (await projectUtil.hasMember(teamId, projectId, targetUserId)) {
         return res.status(400).send({message : "登録済みのユーザIDです。(userId:" + targetUserId + ")"});
       }
       // 管理者権限

@@ -48,7 +48,7 @@ router.get('/list', async function(req, res, next) {
     }
     // プロジェクトIDのマスタチェック
     if (! await projectUtil.hasMember(teamId, projectId, userId)) {
-        return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")});
+        return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
     }
     // ボードID
     let boardId = params.boardId;
@@ -56,7 +56,7 @@ router.get('/list', async function(req, res, next) {
         return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
     }
     // ボードIDのマスタチェック
-    if (! await wallUtil.isBoardId(boardId)) {
+    if (! await wallUtil.isBoardId(teamId, boardId)) {
         return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
     }
     // タスクID
@@ -153,7 +153,7 @@ router.post('/', async function(req, res, next) {
     }
     // プロジェクトの権限チェック
     if (! await projectUtil.hasMember(teamId, projectId, userId)) {
-        return res.status(400).send({message : messageUtil.errMessage003("プロジェクト管理者")});
+        return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
     }
     // ボードID
     let boardId = params.boardId;
@@ -161,7 +161,7 @@ router.post('/', async function(req, res, next) {
         return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
     }
     // ボードIDのマスタチェック
-    if (! await wallUtil.isBoardId(boardId)) {
+    if (! await wallUtil.isBoardId(teamId, boardId)) {
         return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
     }
     // タスクID
@@ -185,7 +185,7 @@ router.post('/', async function(req, res, next) {
     }
 
     // コメントID（連番）を生成
-    let commentId = await generatUtil.getWallCommentId(boardId, taskId);
+    let commentId = await generatUtil.getWallCommentId(teamId, boardId, taskId);
     let orderNo = 0;
   
     // 登録日時
@@ -194,6 +194,7 @@ router.post('/', async function(req, res, next) {
     // コメント登録
     let newComment = await db.query(
         `INSERT INTO sw_t_wall_comment (
+            team_id,
             board_id,
             task_id,
             comment_id,
@@ -204,12 +205,13 @@ router.post('/', async function(req, res, next) {
             update_user,
             update_function,
             update_datetime)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $5, $6, $7)`
-        , [boardId, taskId, commentId, content, 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $6, $7, $8)`
+        , [teamId, boardId, taskId, commentId, content, 
              userId, functionName, insertDate]);
             
     // 登録情報を返却
     res.send({
+        teamId : teamId,
         boardId : boardId,
         taskId : taskId,
         commentId : commentId,
@@ -244,7 +246,7 @@ router.delete('/', async function(req, res, next) {
     }
     // プロジェクト所属チェック
     if (! await projectUtil.hasMember(teamId, projectId, userId)) {
-      return res.status(400).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+      return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
     }
     // ボードID
     let boardId = params.boardId;
@@ -252,7 +254,7 @@ router.delete('/', async function(req, res, next) {
       return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
     }
     // ボードIDのマスタチェック
-    if (! await wallUtil.isBoardId(boardId)) {
+    if (! await wallUtil.isBoardId(teamId, boardId)) {
       return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
     }
     // タスクID

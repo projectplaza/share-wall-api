@@ -62,7 +62,7 @@ router.get('/folder/document/list', async function(req, res, next) {
   }
   // プロジェクト所属チェック
   if (! await projectUtil.hasMember(teamId, projectId, userId)) {
-    return res.status(400).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
   }
 
   // フォルダ一覧を取得
@@ -205,8 +205,8 @@ router.get('/folder/list', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクト所属チェック
-  if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-    return res.status(500).send( { message: 'プロジェクトに所属していません。' } );
+  if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
   }
 
   // フォルダリスト取得SQL
@@ -264,8 +264,8 @@ router.get('/document/list', async function(req, res, next) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
   // プロジェクト所属チェック
-  if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-    return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+  if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
   }
   // フォルダID
   let folderId = params.folderId;
@@ -408,22 +408,14 @@ router.post('/folder', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームIDのマスタチェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
-  }
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-  // プロジェクトIDのマスタチェック
-  if (! await projectUtil.isProjectId(res, projectId)) {
-    return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-  }
   // プロジェクト所属チェック
-  if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-    return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+  if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
   }
   // フォルダ名
   let folderName = params.folderName;
@@ -490,22 +482,14 @@ router.post('/document', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームIDのマスタチェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
-  }
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-  // プロジェクトIDのマスタチェック
-  if (! await projectUtil.isProjectId(res, projectId)) {
-    return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-  }
   // プロジェクト所属チェック
-  if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-    return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+  if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
   }
   // フォルダID
   let folderId = params.folderId;
@@ -612,22 +596,14 @@ router.delete('/folder', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームIDのマスタチェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
-  }
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-  // プロジェクトIDのマスタチェック
-  if (! await projectUtil.isProjectId(res, projectId)) {
-    return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-  }
   // プロジェクト所属チェック
-  if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-    return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+  if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
   }
   // フォルダID
   let folderId = params.folderId;
@@ -699,22 +675,14 @@ router.delete('/document', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームIDのマスタチェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
-  }
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-  // プロジェクトIDのマスタチェック
-  if (! await projectUtil.isProjectId(res, projectId)) {
-    return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-  }
   // プロジェクト所属チェック
-  if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-    return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+  if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
   }
   // ドキュメントID
   let documentId = params.documentId;
@@ -789,22 +757,14 @@ router.put('/folder', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームIDのマスタチェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
-  }
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-  // プロジェクトIDのマスタチェック
-  if (! await projectUtil.isProjectId(res, projectId)) {
-    return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-  }
   // プロジェクト所属チェック
-  if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-    return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+  if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
   }
   // フォルダID
   let folderId = params.folderId;
@@ -905,22 +865,14 @@ router.put('/document', async function(req, res, next) {
   if (! validateUtil.isEmptyText(teamId, "チームID")) {
     return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
   }
-  // チームIDのマスタチェック
-  if (! await teamUtil.isTeamId(res, teamId)) {
-    return res.status(500).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
-  }
   // プロジェクトID
   let projectId = params.projectId;
   if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
     return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
   }
-  // プロジェクトIDのマスタチェック
-  if (! await projectUtil.isProjectId(res, projectId)) {
-    return res.status(500).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-  }
   // プロジェクト所属チェック
-  if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-    return res.status(500).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+  if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+    return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
   }
   // フォルダID
   let folderId = params.folderId;

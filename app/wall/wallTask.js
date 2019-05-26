@@ -43,26 +43,14 @@ router.get('/', async function(req, res, next) {
     if (! validateUtil.isEmptyText(teamId, "チームID")) {
       return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
     }
-    // チームIDのマスタチェック
-    if (! await teamUtil.isTeamId(res, teamId)) {
-        return res.status(400).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
-    }
-    // チーム所属チェック
-    if (! await teamUtil.isTeamAuthority(teamId, userId)) {
-        return res.status(400).send({message : "チームに所属していません。(teamId:" + teamId + ")"});
-    }
     // プロジェクトID
     let projectId = params.projectId;
     if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
       return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
     }
-    // プロジェクトIDのマスタチェック
-    if (! await projectUtil.isProjectId(res, projectId)) {
-        return res.status(400).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-    }
     // プロジェクト所属チェック
-    if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-        return res.status(400).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+    if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+        return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
     }
     // ボードID
     let boardId = params.boardId;
@@ -70,7 +58,7 @@ router.get('/', async function(req, res, next) {
         return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
     }
     // ボードIDのマスタチェック
-    if (! await wallUtil.isBoardId(boardId)) {
+    if (! await wallUtil.isBoardId(teamId, boardId)) {
         return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
     }
     // タスクID
@@ -149,26 +137,14 @@ router.post('/', async function(req, res, next) {
     if (! validateUtil.isEmptyText(teamId, "チームID")) {
         return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
     }
-    // チームIDのマスタチェック
-    if (! await teamUtil.isTeamId(res, teamId)) {
-        return res.status(400).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
-    }
-    // チーム所属チェック
-    if (! await teamUtil.isTeamAuthority(teamId, userId)) {
-        return res.status(400).send({message : "チームに所属していません。(teamId:" + teamId + ")"});
-    }
     // プロジェクトID
     let projectId = params.projectId;
     if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
         return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
     }
-    // プロジェクトIDのマスタチェック
-    if (! await projectUtil.isProjectId(res, projectId)) {
-        return res.status(400).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-    }
     // プロジェクト所属チェック
-    if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-        return res.status(400).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+    if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+        return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
     }
     // ボードID
     let boardId = params.boardId;
@@ -176,7 +152,7 @@ router.post('/', async function(req, res, next) {
         return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
     }
     // ボードIDのマスタチェック
-    if (! await wallUtil.isBoardId(boardId)) {
+    if (! await wallUtil.isBoardId(teamId, boardId)) {
         return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
     }
     // パネルID
@@ -185,7 +161,7 @@ router.post('/', async function(req, res, next) {
         return res.status(400).send({message : messageUtil.errMessage001("パネルID", "panelId")});
     }
     // パネルIDのマスタチェック
-    if (! await wallUtil.isPanelId(boardId, panelId)) {
+    if (! await wallUtil.isPanelId(teamId, boardId, panelId)) {
         return res.status(400).send({message : "パネルIDが存在しません。(panelId:" + panelId + ")"});
     }
     // タイトル
@@ -226,8 +202,7 @@ router.post('/', async function(req, res, next) {
     }
 
     // タスクIDを生成
-    // TODO: タスクIDも、ボードID＋t＋連番 としたい！
-    let taskId = await generatUtil.getWallTaskId(res, boardId);
+    let taskId = await generatUtil.getWallTaskId(teamId, boardId);
   
     // 登録日時
     let insertDate = new Date();
@@ -287,26 +262,14 @@ router.put('/', async function(req, res, next) {
     if (! validateUtil.isEmptyText(teamId, "チームID")) {
         return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
     }
-    // チームIDのマスタチェック
-    if (! await teamUtil.isTeamId(res, teamId)) {
-        return res.status(400).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
-    }
-    // チーム所属チェック
-    if (! await teamUtil.isTeamAuthority(teamId, userId)) {
-        return res.status(400).send({message : "チームに所属していません。(teamId:" + teamId + ")"});
-    }
     // プロジェクトID
     let projectId = params.projectId;
     if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
         return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
     }
-    // プロジェクトIDのマスタチェック
-    if (! await projectUtil.isProjectId(res, projectId)) {
-        return res.status(400).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-    }
     // プロジェクト所属チェック
-    if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-        return res.status(400).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+    if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+        return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
     }
     // ボードID
     let boardId = params.boardId;
@@ -314,7 +277,7 @@ router.put('/', async function(req, res, next) {
         return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
     }
     // ボードIDのマスタチェック
-    if (! await wallUtil.isBoardId(boardId)) {
+    if (! await wallUtil.isBoardId(teamId, boardId)) {
         return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
     }
     // タスク情報
@@ -364,7 +327,7 @@ router.put('/', async function(req, res, next) {
                 panelId = befTask.rows[0].panel_id;
             } else {
                 // パネルIDのマスタチェック
-                if (! await wallUtil.isPanelId(boardId, panelId)) {
+                if (! await wallUtil.isPanelId(teamId, boardId, panelId)) {
                     return res.status(400).send({message : "パネルIDが存在しません。(panelId:" + panelId + ")"});
                 }
             }
@@ -472,26 +435,14 @@ router.delete('/', async function(req, res, next) {
     if (! validateUtil.isEmptyText(teamId, "チームID")) {
       return res.status(400).send({message : messageUtil.errMessage001("チームID", "teamId")});
     }
-    // チームIDのマスタチェック
-    if (! await teamUtil.isTeamId(res, teamId)) {
-      return res.status(400).send({message : "チームIDが存在しません。(teamId:" + teamId + ")"});
-    }
-    // チーム所属チェック
-    if (! await teamUtil.isTeamAuthority(teamId, userId)) {
-        return res.status(400).send({message : "チームに所属していません。(teamId:" + teamId + ")"});
-    }
     // プロジェクトID
     let projectId = params.projectId;
     if (! validateUtil.isEmptyText(projectId, "プロジェクトID")) {
       return res.status(400).send({message : messageUtil.errMessage001("プロジェクトID", "projectId")});
     }
-    // プロジェクトIDのマスタチェック
-    if (! await projectUtil.isProjectId(res, projectId)) {
-      return res.status(400).send({message : "プロジェクトIDが存在しません。(projectId:" + projectId + ")"});
-    }
     // プロジェクト所属チェック
-    if (! await projectUtil.isProjectMember(res, projectId, userId)) {
-      return res.status(400).send({message : "プロジェクトに所属していません。(projectId:" + projectId + ")"});
+    if (! await projectUtil.hasMember(teamId, projectId, userId)) {
+        return res.status(400).send({message : messageUtil.errMessage003("プロジェクトメンバー")});
     }
     // ボードID
     let boardId = params.boardId;
@@ -499,7 +450,7 @@ router.delete('/', async function(req, res, next) {
       return res.status(400).send({message : messageUtil.errMessage001("ボードID", "boardId")});
     }
     // ボードIDのマスタチェック
-    if (! await wallUtil.isBoardId(boardId)) {
+    if (! await wallUtil.isBoardId(teamId, boardId)) {
       return res.status(400).send({message : "ボードIDが存在しません。(boardId:" + boardId + ")"});
     }
     // タスクID
